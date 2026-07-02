@@ -194,6 +194,30 @@ variable "edge_logs_prefix" {
   default     = "edge"
 }
 
+variable "edge_logs_retention_days" {
+  description = "Lifecycle expiration days for edge logs objects."
+  type        = number
+  default     = 90
+}
+
+variable "enable_edge_logs_kms_encryption" {
+  description = "Enable KMS encryption for edge log bucket and Firehose path."
+  type        = bool
+  default     = false
+}
+
+variable "create_edge_logs_kms_key" {
+  description = "Create a dedicated KMS key for edge logs when KMS encryption is enabled."
+  type        = bool
+  default     = true
+}
+
+variable "edge_logs_kms_key_arn" {
+  description = "Existing KMS key ARN for edge logs encryption when create_edge_logs_kms_key is false."
+  type        = string
+  default     = null
+}
+
 variable "enable_deployment_circuit_breaker" {
   description = "Enable ECS deployment circuit breaker."
   type        = bool

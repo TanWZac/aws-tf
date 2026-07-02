@@ -111,11 +111,41 @@ variable "create_edge_logs_bucket" {
 variable "edge_logs_bucket_name" {
   description = "Optional existing S3 bucket name for ALB/WAF logs. If null and create_edge_logs_bucket is true, bucket is created."
   type        = string
+
+  validation {
+    condition     = (var.enable_alb_access_logs || (var.enable_waf && var.enable_waf_logging)) ? (var.create_edge_logs_bucket || var.edge_logs_bucket_name != null) : true
+    error_message = "edge_logs_bucket_name must be provided when edge logging is enabled and create_edge_logs_bucket is false."
+  }
 }
 
 variable "edge_logs_prefix" {
   description = "S3 prefix used for ALB/WAF log delivery."
   type        = string
+}
+
+variable "edge_logs_retention_days" {
+  description = "Lifecycle expiration in days for edge logs objects."
+  type        = number
+}
+
+variable "enable_edge_logs_kms_encryption" {
+  description = "Whether to use KMS encryption for edge log bucket and Firehose delivery."
+  type        = bool
+}
+
+variable "create_edge_logs_kms_key" {
+  description = "Whether to create a KMS key for edge logs when KMS encryption is enabled."
+  type        = bool
+}
+
+variable "edge_logs_kms_key_arn" {
+  description = "Existing KMS key ARN for edge logs encryption. Used when create_edge_logs_kms_key is false."
+  type        = string
+
+  validation {
+    condition     = !var.enable_edge_logs_kms_encryption || var.create_edge_logs_kms_key || can(regex("^arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/.+", var.edge_logs_kms_key_arn))
+    error_message = "edge_logs_kms_key_arn must be a valid KMS key ARN when KMS encryption is enabled and key creation is disabled."
+  }
 }
 
 variable "enable_deployment_circuit_breaker" {

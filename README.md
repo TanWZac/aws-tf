@@ -60,6 +60,7 @@ Service module:
 - Optional HTTPS listener with HTTP->HTTPS redirect
 - Optional WAF web ACL with managed common rules and IP rate-limiting
 - ALB access logs to S3 and optional WAF logs to Firehose/S3
+- Edge log lifecycle retention controls and optional customer-managed KMS encryption
 - ECS Fargate service in private subnets
 - Auto scaling target/policies for CPU and memory
 - Optional request-count autoscaling based on ALB traffic per target
@@ -103,6 +104,8 @@ For startup growth and burst traffic, adjust these variables per environment:
 - `enable_waf`, `waf_rate_limit`: baseline L7 protection and abuse throttling
 - `enable_alb_deletion_protection`: keep true for stage/prod
 - `enable_alb_access_logs`, `enable_waf_logging`, `edge_logs_prefix`: improve incident forensics
+- `edge_logs_retention_days`: control edge-log retention cost and compliance window
+- `enable_edge_logs_kms_encryption`, `create_edge_logs_kms_key`, `edge_logs_kms_key_arn`: enforce customer-managed encryption
 - `enable_request_count_autoscaling`, `request_count_target`: scale on real traffic instead of only host utilization
 - `enable_deployment_circuit_breaker`, `deployment_rollback_on_failure`: safer zero-downtime deployments
 

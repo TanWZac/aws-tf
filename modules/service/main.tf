@@ -5,10 +5,64 @@ resource "aws_cloudwatch_log_group" "service" {
 
 locals {
   create_edge_logs_bucket_effective = var.create_edge_logs_bucket || ((var.enable_alb_access_logs || (var.enable_waf && var.enable_waf_logging)) && var.edge_logs_bucket_name == null)
+  create_edge_logs_kms_key_effective = var.enable_edge_logs_kms_encryption && var.create_edge_logs_kms_key && var.edge_logs_kms_key_arn == null
   edge_logs_bucket_name_effective   = local.create_edge_logs_bucket_effective ? aws_s3_bucket.edge_logs[0].bucket : var.edge_logs_bucket_name
+  edge_logs_kms_key_arn_effective   = var.enable_edge_logs_kms_encryption ? (local.create_edge_logs_kms_key_effective ? aws_kms_key.edge_logs[0].arn : var.edge_logs_kms_key_arn) : null
   edge_logs_prefix_norm             = trim(var.edge_logs_prefix, "/")
   alb_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/AWSLogs/${data.aws_caller_identity.current.account_id}" : "AWSLogs/${data.aws_caller_identity.current.account_id}"
   waf_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/waf/" : "waf/"
+}
+
+data "aws_iam_policy_document" "edge_logs_kms" {
+  count = local.create_edge_logs_kms_key_effective ? 1 : 0
+
+  statement {
+    sid    = "AllowAccountAdmins"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowLogDeliveryServices"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["delivery.logs.amazonaws.com", "logdelivery.elb.amazonaws.com", "firehose.amazonaws.com"]
+    }
+
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_kms_key" "edge_logs" {
+  count = local.create_edge_logs_kms_key_effective ? 1 : 0
+
+  description             = "KMS key for ${var.name_prefix} edge log encryption"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.edge_logs_kms[0].json
+}
+
+resource "aws_kms_alias" "edge_logs" {
+  count = local.create_edge_logs_kms_key_effective ? 1 : 0
+
+  name          = "alias/${var.name_prefix}-edge-logs"
+  target_key_id = aws_kms_key.edge_logs[0].key_id
 }
 
 resource "random_id" "edge_logs_suffix" {
@@ -44,7 +98,27 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "edge_logs" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = var.enable_edge_logs_kms_encryption ? "aws:kms" : "AES256"
+      kms_master_key_id = var.enable_edge_logs_kms_encryption ? local.edge_logs_kms_key_arn_effective : null
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "edge_logs" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  bucket = aws_s3_bucket.edge_logs[0].id
+
+  rule {
+    id     = "expire-edge-logs"
+    status = "Enabled"
+
+    filter {
+      prefix = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/" : ""
+    }
+
+    expiration {
+      days = var.edge_logs_retention_days
     }
   }
 }
@@ -343,30 +417,45 @@ resource "aws_iam_role_policy" "waf_firehose" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:AbortMultipartUpload",
-          "s3:GetBucketLocation",
-          "s3:GetObject",
-          "s3:ListBucket",
-          "s3:ListBucketMultipartUploads",
-          "s3:PutObject"
-        ]
-        Resource = [
-          "arn:${data.aws_partition.current.partition}:s3:::${local.edge_logs_bucket_name_effective}",
-          "arn:${data.aws_partition.current.partition}:s3:::${local.edge_logs_bucket_name_effective}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:PutLogEvents"
-        ]
-        Resource = "*"
-      }
-    ]
+    Statement = concat(
+      [
+        {
+          Effect = "Allow"
+          Action = [
+            "s3:AbortMultipartUpload",
+            "s3:GetBucketLocation",
+            "s3:GetObject",
+            "s3:ListBucket",
+            "s3:ListBucketMultipartUploads",
+            "s3:PutObject"
+          ]
+          Resource = [
+            "arn:${data.aws_partition.current.partition}:s3:::${local.edge_logs_bucket_name_effective}",
+            "arn:${data.aws_partition.current.partition}:s3:::${local.edge_logs_bucket_name_effective}/*"
+          ]
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "logs:PutLogEvents"
+          ]
+          Resource = "*"
+        }
+      ],
+      var.enable_edge_logs_kms_encryption ? [
+        {
+          Effect = "Allow"
+          Action = [
+            "kms:Encrypt",
+            "kms:Decrypt",
+            "kms:ReEncrypt*",
+            "kms:GenerateDataKey*",
+            "kms:DescribeKey"
+          ]
+          Resource = local.edge_logs_kms_key_arn_effective
+        }
+      ] : []
+    )
   })
 }
 
@@ -384,6 +473,7 @@ resource "aws_kinesis_firehose_delivery_stream" "waf_logs" {
     buffering_size      = 10
     buffering_interval  = 300
     compression_format  = "GZIP"
+    kms_key_arn         = var.enable_edge_logs_kms_encryption ? local.edge_logs_kms_key_arn_effective : null
   }
 }
 

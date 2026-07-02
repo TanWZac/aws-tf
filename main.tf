@@ -49,6 +49,10 @@ module "service" {
   create_edge_logs_bucket           = var.create_edge_logs_bucket
   edge_logs_bucket_name             = var.edge_logs_bucket_name
   edge_logs_prefix                  = var.edge_logs_prefix
+  edge_logs_retention_days          = var.edge_logs_retention_days
+  enable_edge_logs_kms_encryption   = var.enable_edge_logs_kms_encryption
+  create_edge_logs_kms_key          = var.create_edge_logs_kms_key
+  edge_logs_kms_key_arn             = var.edge_logs_kms_key_arn
   enable_deployment_circuit_breaker = var.enable_deployment_circuit_breaker
   deployment_rollback_on_failure    = var.deployment_rollback_on_failure
   enable_request_count_autoscaling  = var.enable_request_count_autoscaling
