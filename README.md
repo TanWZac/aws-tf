@@ -17,6 +17,7 @@ It is structured for multi-environment deployments and team collaboration.
 - High-availability networking: NAT mode (`single` or `per_az`) and private VPC endpoints
 - Elastic request handling: ALB + ECS service + CPU/memory target-tracking autoscaling
 - CI checks for fmt/validate/plan on each environment
+- CI quality gates for linting and IaC security scanning
 - Module scaffold script for fast and consistent module creation
 
 ## Repository Layout
@@ -57,8 +58,14 @@ AI module:
 Service module:
 
 - Internet-facing ALB in public subnets
+- Optional HTTPS listener with HTTP->HTTPS redirect
+- Optional WAF web ACL with managed common rules and IP rate-limiting
+- ALB access logs to S3 and optional WAF logs to Firehose/S3
+- Edge log lifecycle retention controls and optional customer-managed KMS encryption
 - ECS Fargate service in private subnets
 - Auto scaling target/policies for CPU and memory
+- Optional request-count autoscaling based on ALB traffic per target
+- ECS deployment circuit breaker with rollback controls
 - CloudWatch logs for service containers
 - Security group segmentation between ALB and tasks
 
@@ -85,6 +92,18 @@ Dev:
 
 Stage and prod use the same commands with `ENV=stage` or `ENV=prod`.
 
+Quality gates:
+
+- `make lint`
+- `make security-check`
+
+Load testing:
+
+- `BASE_URL=https://<alb-or-domain> make loadtest-smoke`
+- `BASE_URL=https://<alb-or-domain> make loadtest-spike`
+
+Detailed rollout guidance is in `docs/deployment-runbook.md`.
+
 ## Scale Tuning
 
 For startup growth and burst traffic, adjust these variables per environment:
@@ -94,6 +113,20 @@ For startup growth and burst traffic, adjust these variables per environment:
 - `app_task_cpu`, `app_task_memory`: per-task capacity profile
 - `enable_vpc_endpoints`: keep enabled to reduce NAT dependency for AWS service traffic
 - `availability_zones`: add zones as you scale across more AZs
+- `enable_alb_https`, `alb_certificate_arn`, `alb_ssl_policy`: enforce TLS at the edge
+- `enable_waf`, `waf_rate_limit`: baseline L7 protection and abuse throttling
+- `enable_alb_deletion_protection`: keep true for stage/prod
+- `enable_alb_access_logs`, `enable_waf_logging`, `edge_logs_prefix`: improve incident forensics
+- `edge_logs_retention_days`: control edge-log retention cost and compliance window
+- `enable_edge_logs_kms_encryption`, `create_edge_logs_kms_key`, `edge_logs_kms_key_arn`: enforce customer-managed encryption
+- `enable_request_count_autoscaling`, `request_count_target`: scale on real traffic instead of only host utilization
+- `enable_deployment_circuit_breaker`, `deployment_rollback_on_failure`: safer zero-downtime deployments
+
+## Security Notes
+
+- Stage and prod tfvars include placeholder ACM certificate ARNs. Replace these values before `terraform apply`.
+- Environment baseline examples are available at `environments/<env>/terraform.tfvars.example`.
+- Keep Git SSL verification enabled unless temporarily required by your enterprise proxy setup.
 
 ## Branch Strategy
 

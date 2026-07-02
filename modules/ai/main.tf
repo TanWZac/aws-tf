@@ -55,13 +55,8 @@ resource "aws_iam_role" "sagemaker_execution" {
   assume_role_policy = data.aws_iam_policy_document.assume_sagemaker.json
 }
 
-resource "aws_iam_role_policy_attachment" "sagemaker_full_access" {
-  role       = aws_iam_role.sagemaker_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
-}
-
-resource "aws_iam_role_policy" "s3_access" {
-  name = "${var.name_prefix}-ai-s3-access"
+resource "aws_iam_role_policy" "least_privilege" {
+  name = "${var.name_prefix}-ai-least-privilege"
   role = aws_iam_role.sagemaker_execution.id
 
   policy = jsonencode({
@@ -86,6 +81,42 @@ resource "aws_iam_role_policy" "s3_access" {
         Resource = [
           "${aws_s3_bucket.dataset.arn}/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:List*",
+          "sagemaker:Describe*",
+          "sagemaker:CreateTrainingJob",
+          "sagemaker:CreateProcessingJob",
+          "sagemaker:CreateModel",
+          "sagemaker:CreateEndpointConfig",
+          "sagemaker:CreateEndpoint",
+          "sagemaker:UpdateEndpoint",
+          "sagemaker:DeleteEndpoint",
+          "sagemaker:InvokeEndpoint"
+        ]
+        Resource = "*"
       }
     ]
   })

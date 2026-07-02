@@ -128,6 +128,132 @@ variable "app_health_check_path" {
   default     = "/"
 }
 
+variable "enable_alb_https" {
+  description = "Whether to expose the app service through HTTPS listener on ALB."
+  type        = bool
+  default     = false
+}
+
+variable "alb_certificate_arn" {
+  description = "ACM certificate ARN used by ALB HTTPS listener."
+  type        = string
+  default     = null
+}
+
+variable "alb_ssl_policy" {
+  description = "SSL policy for ALB HTTPS listener."
+  type        = string
+  default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+}
+
+variable "enable_waf" {
+  description = "Whether to attach AWS WAF web ACL to the ALB."
+  type        = bool
+  default     = false
+}
+
+variable "waf_rate_limit" {
+  description = "Rate limit (requests per 5 minutes per IP) for WAF rate-based rule."
+  type        = number
+  default     = 2000
+}
+
+variable "enable_alb_deletion_protection" {
+  description = "Enable deletion protection for ALB. Should be true for stage/prod."
+  type        = bool
+  default     = true
+}
+
+variable "enable_alb_access_logs" {
+  description = "Enable ALB access logs to S3."
+  type        = bool
+  default     = true
+}
+
+variable "enable_waf_logging" {
+  description = "Enable WAF logs through Firehose to S3."
+  type        = bool
+  default     = true
+}
+
+variable "create_edge_logs_bucket" {
+  description = "Create a dedicated S3 bucket for ALB and WAF logs."
+  type        = bool
+  default     = true
+}
+
+variable "edge_logs_bucket_name" {
+  description = "Existing bucket name for edge logs. If null and create_edge_logs_bucket is true, a bucket is created."
+  type        = string
+  default     = null
+}
+
+variable "edge_logs_prefix" {
+  description = "Prefix for ALB/WAF logs inside edge logs bucket."
+  type        = string
+  default     = "edge"
+}
+
+variable "edge_logs_retention_days" {
+  description = "Lifecycle expiration days for edge logs objects."
+  type        = number
+  default     = 90
+}
+
+variable "enable_edge_logs_kms_encryption" {
+  description = "Enable KMS encryption for edge log bucket and Firehose path."
+  type        = bool
+  default     = false
+}
+
+variable "create_edge_logs_kms_key" {
+  description = "Create a dedicated KMS key for edge logs when KMS encryption is enabled."
+  type        = bool
+  default     = true
+}
+
+variable "edge_logs_kms_key_arn" {
+  description = "Existing KMS key ARN for edge logs encryption when create_edge_logs_kms_key is false."
+  type        = string
+  default     = null
+}
+
+variable "enable_deployment_circuit_breaker" {
+  description = "Enable ECS deployment circuit breaker."
+  type        = bool
+  default     = true
+}
+
+variable "deployment_rollback_on_failure" {
+  description = "When deployment circuit breaker is enabled, roll back failed deployments."
+  type        = bool
+  default     = true
+}
+
+variable "enable_request_count_autoscaling" {
+  description = "Enable ALB request-count-based autoscaling for ECS service."
+  type        = bool
+  default     = true
+}
+
+variable "request_count_target" {
+  description = "Target ALB requests per target for request-count autoscaling policy."
+  type        = number
+  default     = 800
+}
+
+variable "request_scale_in_cooldown" {
+  description = "Scale-in cooldown in seconds for request-count autoscaling policy."
+  type        = number
+  default     = 180
+}
+
+variable "request_scale_out_cooldown" {
+  description = "Scale-out cooldown in seconds for request-count autoscaling policy."
+  type        = number
+  default     = 60
+}
+
 variable "additional_tags" {
   description = "Additional tags applied to all resources through AWS provider default tags."
   type        = map(string)

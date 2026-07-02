@@ -19,6 +19,27 @@ jobs:
         with:
           terraform_version: 1.8.5
 
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: TFLint init
+        run: tflint --init
+
+      - name: TFLint
+        run: tflint --recursive
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: true
+
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          soft_fail: true
+
       - name: Terraform fmt check
         run: terraform fmt -check -recursive
 
@@ -29,4 +50,15 @@ jobs:
         run: terraform validate
 
       - name: Terraform plan
-        run: terraform plan -input=false -lock=false -var-file=environments/${{ matrix.env_name }}/terraform.tfvars
+        run: terraform plan -input=false -lock=false -var-file=environments/${{ matrix.env_name }}/terraform.tfvars -out=${{ matrix.env_name }}.tfplan
+
+      - name: Save plan as text
+        run: terraform show -no-color ${{ matrix.env_name }}.tfplan > ${{ matrix.env_name }}.plan.txt
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ matrix.env_name }}
+          path: |
+            ${{ matrix.env_name }}.tfplan
+            ${{ matrix.env_name }}.plan.txt

@@ -5,11 +5,12 @@ TF_DIR := .
 VARS_FILE := environments/$(ENV)/terraform.tfvars
 BACKEND_FILE := environments/$(ENV)/backend.hcl
 
-.PHONY: help fmt init validate plan apply destroy
+.PHONY: help fmt init validate plan apply destroy lint security-check loadtest-smoke loadtest-spike
 
 help:
 	@echo "Usage: make <target> ENV=<dev|stage|prod>"
-	@echo "Targets: fmt, init, validate, plan, apply, destroy"
+	@echo "Targets: fmt, init, validate, plan, apply, destroy, lint, security-check"
+	@echo "Load tests: loadtest-smoke BASE_URL=https://..., loadtest-spike BASE_URL=https://..."
 
 fmt:
 	terraform -chdir=$(TF_DIR) fmt -recursive
@@ -28,3 +29,17 @@ apply:
 
 destroy:
 	terraform -chdir=$(TF_DIR) destroy -var-file=$(VARS_FILE)
+
+lint:
+	tflint --init
+	tflint --recursive
+
+security-check:
+	tfsec .
+	checkov -d . --framework terraform
+
+loadtest-smoke:
+	k6 run loadtest/smoke.js
+
+loadtest-spike:
+	k6 run loadtest/spike.js
