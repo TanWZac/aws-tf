@@ -22,3 +22,7 @@ terraform.tfvars
 # Local secrets
 env.sh
 .env
+
+# Local backend and load-test outputs
+environments/*/backend.hcl
+loadtest/results/

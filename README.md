@@ -17,6 +17,7 @@ It is structured for multi-environment deployments and team collaboration.
 - High-availability networking: NAT mode (`single` or `per_az`) and private VPC endpoints
 - Elastic request handling: ALB + ECS service + CPU/memory target-tracking autoscaling
 - CI checks for fmt/validate/plan on each environment
+- CI quality gates for linting and IaC security scanning
 - Module scaffold script for fast and consistent module creation
 
 ## Repository Layout
@@ -91,6 +92,18 @@ Dev:
 
 Stage and prod use the same commands with `ENV=stage` or `ENV=prod`.
 
+Quality gates:
+
+- `make lint`
+- `make security-check`
+
+Load testing:
+
+- `BASE_URL=https://<alb-or-domain> make loadtest-smoke`
+- `BASE_URL=https://<alb-or-domain> make loadtest-spike`
+
+Detailed rollout guidance is in `docs/deployment-runbook.md`.
+
 ## Scale Tuning
 
 For startup growth and burst traffic, adjust these variables per environment:
@@ -112,6 +125,7 @@ For startup growth and burst traffic, adjust these variables per environment:
 ## Security Notes
 
 - Stage and prod tfvars include placeholder ACM certificate ARNs. Replace these values before `terraform apply`.
+- Environment baseline examples are available at `environments/<env>/terraform.tfvars.example`.
 - Keep Git SSL verification enabled unless temporarily required by your enterprise proxy setup.
 
 ## Branch Strategy
