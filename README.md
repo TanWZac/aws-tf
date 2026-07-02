@@ -57,6 +57,8 @@ AI module:
 Service module:
 
 - Internet-facing ALB in public subnets
+- Optional HTTPS listener with HTTP->HTTPS redirect
+- Optional WAF web ACL with managed common rules and IP rate-limiting
 - ECS Fargate service in private subnets
 - Auto scaling target/policies for CPU and memory
 - CloudWatch logs for service containers
@@ -94,6 +96,14 @@ For startup growth and burst traffic, adjust these variables per environment:
 - `app_task_cpu`, `app_task_memory`: per-task capacity profile
 - `enable_vpc_endpoints`: keep enabled to reduce NAT dependency for AWS service traffic
 - `availability_zones`: add zones as you scale across more AZs
+- `enable_alb_https`, `alb_certificate_arn`, `alb_ssl_policy`: enforce TLS at the edge
+- `enable_waf`, `waf_rate_limit`: baseline L7 protection and abuse throttling
+- `enable_alb_deletion_protection`: keep true for stage/prod
+
+## Security Notes
+
+- Stage and prod tfvars include placeholder ACM certificate ARNs. Replace these values before `terraform apply`.
+- Keep Git SSL verification enabled unless temporarily required by your enterprise proxy setup.
 
 ## Branch Strategy
 

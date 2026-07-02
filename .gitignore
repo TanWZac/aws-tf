@@ -1,5 +1,4 @@
 .terraform/
-.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 crash.log
@@ -19,3 +18,7 @@ terraform.tfvars
 # Editor/OS
 .DS_Store
 .vscode/
+
+# Local secrets
+env.sh
+.env

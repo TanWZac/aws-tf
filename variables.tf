@@ -128,6 +128,42 @@ variable "app_health_check_path" {
   default     = "/"
 }
 
+variable "enable_alb_https" {
+  description = "Whether to expose the app service through HTTPS listener on ALB."
+  type        = bool
+  default     = false
+}
+
+variable "alb_certificate_arn" {
+  description = "ACM certificate ARN used by ALB HTTPS listener."
+  type        = string
+  default     = null
+}
+
+variable "alb_ssl_policy" {
+  description = "SSL policy for ALB HTTPS listener."
+  type        = string
+  default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+}
+
+variable "enable_waf" {
+  description = "Whether to attach AWS WAF web ACL to the ALB."
+  type        = bool
+  default     = false
+}
+
+variable "waf_rate_limit" {
+  description = "Rate limit (requests per 5 minutes per IP) for WAF rate-based rule."
+  type        = number
+  default     = 2000
+}
+
+variable "enable_alb_deletion_protection" {
+  description = "Enable deletion protection for ALB. Should be true for stage/prod."
+  type        = bool
+  default     = true
+}
+
 variable "additional_tags" {
   description = "Additional tags applied to all resources through AWS provider default tags."
   type        = map(string)

@@ -57,3 +57,38 @@ variable "health_check_path" {
   description = "Health check path for ALB target group."
   type        = string
 }
+
+variable "enable_https" {
+  description = "Whether to enable HTTPS listener on the ALB."
+  type        = bool
+}
+
+variable "certificate_arn" {
+  description = "ACM certificate ARN for HTTPS listener."
+  type        = string
+
+  validation {
+    condition     = !var.enable_https || can(regex("^arn:aws:acm:[a-z0-9-]+:[0-9]{12}:certificate/.+", var.certificate_arn))
+    error_message = "certificate_arn must be a valid ACM certificate ARN when enable_https is true."
+  }
+}
+
+variable "ssl_policy" {
+  description = "TLS policy for HTTPS listener."
+  type        = string
+}
+
+variable "enable_waf" {
+  description = "Whether to attach WAF web ACL to the ALB."
+  type        = bool
+}
+
+variable "waf_rate_limit" {
+  description = "Rate limit per source IP in 5-minute window."
+  type        = number
+}
+
+variable "enable_deletion_protection" {
+  description = "Whether to enable ALB deletion protection."
+  type        = bool
+}

@@ -39,4 +39,11 @@ module "service" {
   min_capacity      = var.app_min_capacity
   max_capacity      = var.app_max_capacity
   health_check_path = var.app_health_check_path
+  enable_https      = var.enable_alb_https
+  certificate_arn   = var.alb_certificate_arn
+  ssl_policy        = var.alb_ssl_policy
+  enable_waf        = var.enable_waf
+  waf_rate_limit    = var.waf_rate_limit
+
+  enable_deletion_protection = var.enable_alb_deletion_protection
 }

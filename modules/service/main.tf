@@ -77,7 +77,7 @@ resource "aws_lb" "this" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = var.public_subnet_ids
 
-  enable_deletion_protection = false
+  enable_deletion_protection = var.enable_deletion_protection
 }
 
 resource "aws_lb_target_group" "service" {
@@ -102,9 +102,109 @@ resource "aws_lb_listener" "http" {
   port              = 80
   protocol          = "HTTP"
 
+  dynamic "default_action" {
+    for_each = var.enable_https ? [1] : []
+    content {
+      type = "redirect"
+
+      redirect {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  }
+
+  dynamic "default_action" {
+    for_each = var.enable_https ? [] : [1]
+    content {
+      type             = "forward"
+      target_group_arn = aws_lb_target_group.service.arn
+    }
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  count = var.enable_https ? 1 : 0
+
+  load_balancer_arn = aws_lb.this.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = var.ssl_policy
+  certificate_arn   = var.certificate_arn
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.service.arn
+  }
+}
+
+resource "aws_wafv2_web_acl" "this" {
+  count = var.enable_waf ? 1 : 0
+
+  name  = substr(replace("${var.name_prefix}-web-acl", "_", "-"), 0, 128)
+  scope = "REGIONAL"
+
+  default_action {
+    allow {}
+  }
+
+  rule {
+    name     = "AWSManagedRulesCommonRuleSet"
+    priority = 1
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesCommonRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "managed-common-rules"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "IpRateLimit"
+    priority = 2
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit              = var.waf_rate_limit
+        aggregate_key_type = "IP"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "ip-rate-limit"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "${replace(var.name_prefix, "-", "_")}_waf"
+    sampled_requests_enabled   = true
+  }
+}
+
+resource "aws_wafv2_web_acl_association" "alb" {
+  count = var.enable_waf ? 1 : 0
+
+  resource_arn = aws_lb.this.arn
+  web_acl_arn  = aws_wafv2_web_acl.this[0].arn
   }
 }
 
@@ -166,7 +266,7 @@ resource "aws_ecs_service" "this" {
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.http, aws_lb_listener.https]
 }
 
 resource "aws_appautoscaling_target" "ecs" {
