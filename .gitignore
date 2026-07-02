@@ -1,0 +1,21 @@
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Local plan artifacts
+*.plan
+*.tfplan
+
+# Editor/OS
+.DS_Store
+.vscode/

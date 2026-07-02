@@ -1,0 +1,24 @@
+aws_region                = "us-east-1"
+aws_profile               = null
+allowed_account_ids       = []
+project_name              = "platform-ai"
+environment               = "dev"
+vpc_cidr                  = "10.20.0.0/16"
+availability_zones        = ["us-east-1a", "us-east-1b"]
+nat_gateway_mode          = "single"
+enable_vpc_endpoints      = true
+create_sagemaker_notebook = true
+sagemaker_instance_type   = "ml.t3.medium"
+enable_app_service        = true
+app_container_image       = "public.ecr.aws/nginx/nginx:stable"
+app_container_port        = 80
+app_task_cpu              = 512
+app_task_memory           = 1024
+app_desired_count         = 2
+app_min_capacity          = 2
+app_max_capacity          = 10
+app_health_check_path     = "/"
+additional_tags = {
+  Owner      = "platform-team"
+  CostCenter = "engineering"
+}
