@@ -92,3 +92,58 @@ variable "enable_deletion_protection" {
   description = "Whether to enable ALB deletion protection."
   type        = bool
 }
+
+variable "enable_alb_access_logs" {
+  description = "Whether to enable ALB access logging to S3."
+  type        = bool
+}
+
+variable "enable_waf_logging" {
+  description = "Whether to enable WAF logging through Firehose to S3."
+  type        = bool
+}
+
+variable "create_edge_logs_bucket" {
+  description = "Whether to create an S3 bucket for ALB/WAF logs."
+  type        = bool
+}
+
+variable "edge_logs_bucket_name" {
+  description = "Optional existing S3 bucket name for ALB/WAF logs. If null and create_edge_logs_bucket is true, bucket is created."
+  type        = string
+}
+
+variable "edge_logs_prefix" {
+  description = "S3 prefix used for ALB/WAF log delivery."
+  type        = string
+}
+
+variable "enable_deployment_circuit_breaker" {
+  description = "Whether to enable ECS deployment circuit breaker."
+  type        = bool
+}
+
+variable "deployment_rollback_on_failure" {
+  description = "Whether ECS should roll back failed deployments when circuit breaker is enabled."
+  type        = bool
+}
+
+variable "enable_request_count_autoscaling" {
+  description = "Whether to autoscale ECS service based on ALB request count per target."
+  type        = bool
+}
+
+variable "request_count_target" {
+  description = "Target ALB requests per target for autoscaling policy."
+  type        = number
+}
+
+variable "request_scale_in_cooldown" {
+  description = "Scale-in cooldown (seconds) for request-count autoscaling policy."
+  type        = number
+}
+
+variable "request_scale_out_cooldown" {
+  description = "Scale-out cooldown (seconds) for request-count autoscaling policy."
+  type        = number
+}

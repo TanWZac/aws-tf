@@ -3,6 +3,106 @@ resource "aws_cloudwatch_log_group" "service" {
   retention_in_days = 30
 }
 
+locals {
+  create_edge_logs_bucket_effective = var.create_edge_logs_bucket || ((var.enable_alb_access_logs || (var.enable_waf && var.enable_waf_logging)) && var.edge_logs_bucket_name == null)
+  edge_logs_bucket_name_effective   = local.create_edge_logs_bucket_effective ? aws_s3_bucket.edge_logs[0].bucket : var.edge_logs_bucket_name
+  edge_logs_prefix_norm             = trim(var.edge_logs_prefix, "/")
+  alb_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/AWSLogs/${data.aws_caller_identity.current.account_id}" : "AWSLogs/${data.aws_caller_identity.current.account_id}"
+  waf_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/waf/" : "waf/"
+}
+
+resource "random_id" "edge_logs_suffix" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  byte_length = 3
+}
+
+resource "aws_s3_bucket" "edge_logs" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  bucket = lower("${var.name_prefix}-edge-logs-${random_id.edge_logs_suffix[0].hex}")
+
+  tags = {
+    Name = "${var.name_prefix}-edge-logs"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "edge_logs" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  bucket = aws_s3_bucket.edge_logs[0].id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "edge_logs" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  bucket = aws_s3_bucket.edge_logs[0].id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "edge_logs" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  bucket = aws_s3_bucket.edge_logs[0].id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+data "aws_iam_policy_document" "edge_logs_bucket" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  statement {
+    sid    = "AllowALBLogDeliveryWrite"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["logdelivery.elb.amazonaws.com", "delivery.logs.amazonaws.com"]
+    }
+
+    actions = ["s3:PutObject"]
+
+    resources = [
+      "${aws_s3_bucket.edge_logs[0].arn}/${local.alb_log_key_prefix}/*"
+    ]
+  }
+
+  statement {
+    sid    = "AllowALBLogDeliveryAclCheck"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["logdelivery.elb.amazonaws.com", "delivery.logs.amazonaws.com"]
+    }
+
+    actions = ["s3:GetBucketAcl"]
+
+    resources = [
+      aws_s3_bucket.edge_logs[0].arn
+    ]
+  }
+}
+
+resource "aws_s3_bucket_policy" "edge_logs" {
+  count = local.create_edge_logs_bucket_effective ? 1 : 0
+
+  bucket = aws_s3_bucket.edge_logs[0].id
+  policy = data.aws_iam_policy_document.edge_logs_bucket[0].json
+}
+
 data "aws_iam_policy_document" "task_assume_role" {
   statement {
     effect = "Allow"
@@ -78,6 +178,15 @@ resource "aws_lb" "this" {
   subnets            = var.public_subnet_ids
 
   enable_deletion_protection = var.enable_deletion_protection
+
+  dynamic "access_logs" {
+    for_each = var.enable_alb_access_logs ? [1] : []
+    content {
+      bucket  = local.edge_logs_bucket_name_effective
+      prefix  = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/alb" : "alb"
+      enabled = true
+    }
+  }
 }
 
 resource "aws_lb_target_group" "service" {
@@ -205,7 +314,84 @@ resource "aws_wafv2_web_acl_association" "alb" {
 
   resource_arn = aws_lb.this.arn
   web_acl_arn  = aws_wafv2_web_acl.this[0].arn
+}
+
+resource "aws_iam_role" "waf_firehose" {
+  count = var.enable_waf && var.enable_waf_logging ? 1 : 0
+
+  name = "${var.name_prefix}-waf-firehose-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "firehose.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "waf_firehose" {
+  count = var.enable_waf && var.enable_waf_logging ? 1 : 0
+
+  name = "${var.name_prefix}-waf-firehose-s3"
+  role = aws_iam_role.waf_firehose[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:AbortMultipartUpload",
+          "s3:GetBucketLocation",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:ListBucketMultipartUploads",
+          "s3:PutObject"
+        ]
+        Resource = [
+          "arn:${data.aws_partition.current.partition}:s3:::${local.edge_logs_bucket_name_effective}",
+          "arn:${data.aws_partition.current.partition}:s3:::${local.edge_logs_bucket_name_effective}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_kinesis_firehose_delivery_stream" "waf_logs" {
+  count = var.enable_waf && var.enable_waf_logging ? 1 : 0
+
+  name        = substr(replace("aws-waf-logs-${var.name_prefix}", "_", "-"), 0, 64)
+  destination = "extended_s3"
+
+  extended_s3_configuration {
+    role_arn            = aws_iam_role.waf_firehose[0].arn
+    bucket_arn          = "arn:${data.aws_partition.current.partition}:s3:::${local.edge_logs_bucket_name_effective}"
+    prefix              = "${local.waf_log_key_prefix}!{timestamp:yyyy/MM/dd}/"
+    error_output_prefix = "${local.waf_log_key_prefix}errors/!{timestamp:yyyy/MM/dd}/"
+    buffering_size      = 10
+    buffering_interval  = 300
+    compression_format  = "GZIP"
   }
+}
+
+resource "aws_wafv2_web_acl_logging_configuration" "this" {
+  count = var.enable_waf && var.enable_waf_logging ? 1 : 0
+
+  log_destination_configs = [aws_kinesis_firehose_delivery_stream.waf_logs[0].arn]
+  resource_arn            = aws_wafv2_web_acl.this[0].arn
 }
 
 resource "aws_ecs_cluster" "this" {
@@ -266,6 +452,11 @@ resource "aws_ecs_service" "this" {
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
 
+  deployment_circuit_breaker {
+    enable   = var.enable_deployment_circuit_breaker
+    rollback = var.deployment_rollback_on_failure
+  }
+
   depends_on = [aws_lb_listener.http, aws_lb_listener.https]
 }
 
@@ -315,4 +506,30 @@ resource "aws_appautoscaling_policy" "memory" {
   }
 }
 
+resource "aws_appautoscaling_policy" "request_count" {
+  count = var.enable_request_count_autoscaling ? 1 : 0
+
+  name               = "${var.name_prefix}-request-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    target_value = var.request_count_target
+
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = "${aws_lb.this.arn_suffix}/${aws_lb_target_group.service.arn_suffix}"
+    }
+
+    scale_in_cooldown  = var.request_scale_in_cooldown
+    scale_out_cooldown = var.request_scale_out_cooldown
+  }
+}
+
 data "aws_region" "current" {}
+
+data "aws_caller_identity" "current" {}
+
+data "aws_partition" "current" {}

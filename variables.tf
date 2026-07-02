@@ -164,6 +164,72 @@ variable "enable_alb_deletion_protection" {
   default     = true
 }
 
+variable "enable_alb_access_logs" {
+  description = "Enable ALB access logs to S3."
+  type        = bool
+  default     = true
+}
+
+variable "enable_waf_logging" {
+  description = "Enable WAF logs through Firehose to S3."
+  type        = bool
+  default     = true
+}
+
+variable "create_edge_logs_bucket" {
+  description = "Create a dedicated S3 bucket for ALB and WAF logs."
+  type        = bool
+  default     = true
+}
+
+variable "edge_logs_bucket_name" {
+  description = "Existing bucket name for edge logs. If null and create_edge_logs_bucket is true, a bucket is created."
+  type        = string
+  default     = null
+}
+
+variable "edge_logs_prefix" {
+  description = "Prefix for ALB/WAF logs inside edge logs bucket."
+  type        = string
+  default     = "edge"
+}
+
+variable "enable_deployment_circuit_breaker" {
+  description = "Enable ECS deployment circuit breaker."
+  type        = bool
+  default     = true
+}
+
+variable "deployment_rollback_on_failure" {
+  description = "When deployment circuit breaker is enabled, roll back failed deployments."
+  type        = bool
+  default     = true
+}
+
+variable "enable_request_count_autoscaling" {
+  description = "Enable ALB request-count-based autoscaling for ECS service."
+  type        = bool
+  default     = true
+}
+
+variable "request_count_target" {
+  description = "Target ALB requests per target for request-count autoscaling policy."
+  type        = number
+  default     = 800
+}
+
+variable "request_scale_in_cooldown" {
+  description = "Scale-in cooldown in seconds for request-count autoscaling policy."
+  type        = number
+  default     = 180
+}
+
+variable "request_scale_out_cooldown" {
+  description = "Scale-out cooldown in seconds for request-count autoscaling policy."
+  type        = number
+  default     = 60
+}
+
 variable "additional_tags" {
   description = "Additional tags applied to all resources through AWS provider default tags."
   type        = map(string)

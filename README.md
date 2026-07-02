@@ -59,8 +59,11 @@ Service module:
 - Internet-facing ALB in public subnets
 - Optional HTTPS listener with HTTP->HTTPS redirect
 - Optional WAF web ACL with managed common rules and IP rate-limiting
+- ALB access logs to S3 and optional WAF logs to Firehose/S3
 - ECS Fargate service in private subnets
 - Auto scaling target/policies for CPU and memory
+- Optional request-count autoscaling based on ALB traffic per target
+- ECS deployment circuit breaker with rollback controls
 - CloudWatch logs for service containers
 - Security group segmentation between ALB and tasks
 
@@ -99,6 +102,9 @@ For startup growth and burst traffic, adjust these variables per environment:
 - `enable_alb_https`, `alb_certificate_arn`, `alb_ssl_policy`: enforce TLS at the edge
 - `enable_waf`, `waf_rate_limit`: baseline L7 protection and abuse throttling
 - `enable_alb_deletion_protection`: keep true for stage/prod
+- `enable_alb_access_logs`, `enable_waf_logging`, `edge_logs_prefix`: improve incident forensics
+- `enable_request_count_autoscaling`, `request_count_target`: scale on real traffic instead of only host utilization
+- `enable_deployment_circuit_breaker`, `deployment_rollback_on_failure`: safer zero-downtime deployments
 
 ## Security Notes
 

@@ -44,6 +44,17 @@ module "service" {
   ssl_policy        = var.alb_ssl_policy
   enable_waf        = var.enable_waf
   waf_rate_limit    = var.waf_rate_limit
+  enable_alb_access_logs            = var.enable_alb_access_logs
+  enable_waf_logging                = var.enable_waf_logging
+  create_edge_logs_bucket           = var.create_edge_logs_bucket
+  edge_logs_bucket_name             = var.edge_logs_bucket_name
+  edge_logs_prefix                  = var.edge_logs_prefix
+  enable_deployment_circuit_breaker = var.enable_deployment_circuit_breaker
+  deployment_rollback_on_failure    = var.deployment_rollback_on_failure
+  enable_request_count_autoscaling  = var.enable_request_count_autoscaling
+  request_count_target              = var.request_count_target
+  request_scale_in_cooldown         = var.request_scale_in_cooldown
+  request_scale_out_cooldown        = var.request_scale_out_cooldown
 
   enable_deletion_protection = var.enable_alb_deletion_protection
 }
