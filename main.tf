@@ -86,3 +86,28 @@ module "api_gateway" {
   jwt_issuer                = var.api_gateway_jwt_issuer
   jwt_audiences             = var.api_gateway_jwt_audiences
 }
+
+module "redis" {
+  count  = var.enable_redis ? 1 : 0
+  source = "./modules/redis"
+
+  name_prefix        = local.name_prefix
+  vpc_id             = module.platform.vpc_id
+  private_subnet_ids = module.platform.private_subnet_ids
+
+  allowed_security_group_ids = concat(
+    [module.platform.workloads_security_group_id],
+    var.enable_app_service ? [module.service[0].service_security_group_id] : []
+  )
+
+  engine                      = var.redis_engine
+  engine_version              = var.redis_engine_version
+  node_type                   = var.redis_node_type
+  node_count                  = var.redis_node_count
+  port                        = var.redis_port
+  at_rest_encryption_enabled  = var.redis_at_rest_encryption_enabled
+  transit_encryption_enabled  = var.redis_transit_encryption_enabled
+  auth_token                  = var.redis_auth_token
+  snapshot_retention_limit    = var.redis_snapshot_retention_limit
+  maintenance_window          = var.redis_maintenance_window
+}
