@@ -6,6 +6,11 @@ variable "name_prefix" {
 variable "backend_url" {
   description = "HTTP backend URL for the API Gateway proxy integration. Example: http://internal-or-public-alb.example.com"
   type        = string
+
+  validation {
+    condition     = can(regex("^https?://", var.backend_url))
+    error_message = "backend_url must start with http:// or https://."
+  }
 }
 
 variable "stage_name" {
@@ -15,9 +20,9 @@ variable "stage_name" {
 }
 
 variable "allowed_origins" {
-  description = "CORS allowed origins."
+  description = "CORS allowed origins. Defaults to empty (no CORS headers sent). Set explicitly per environment."
   type        = list(string)
-  default     = ["*"]
+  default     = []
 }
 
 variable "allowed_methods" {
@@ -48,6 +53,30 @@ variable "throttling_rate_limit" {
   description = "Default route throttling rate limit per second."
   type        = number
   default     = 50
+}
+
+variable "auto_deploy" {
+  description = "Whether the stage auto-deploys on configuration changes. Disable in prod for controlled rollouts."
+  type        = bool
+  default     = true
+}
+
+variable "enable_jwt_authorizer" {
+  description = "Whether to attach a JWT authorizer to all routes."
+  type        = bool
+  default     = false
+}
+
+variable "jwt_issuer" {
+  description = "JWT issuer URL (e.g. https://cognito-idp.<region>.amazonaws.com/<user_pool_id>). Required when enable_jwt_authorizer is true."
+  type        = string
+  default     = null
+}
+
+variable "jwt_audiences" {
+  description = "List of JWT audiences (app client IDs). Required when enable_jwt_authorizer is true."
+  type        = list(string)
+  default     = []
 }
 
 variable "custom_domain_name" {

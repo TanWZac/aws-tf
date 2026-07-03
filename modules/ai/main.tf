@@ -149,7 +149,7 @@ resource "aws_sagemaker_notebook_instance" "this" {
 
 resource "aws_ecr_repository" "models" {
   name                 = "${var.name_prefix}/model-serving"
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = "IMMUTABLE"
 
   encryption_configuration {
     encryption_type = "AES256"

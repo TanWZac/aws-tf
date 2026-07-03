@@ -64,7 +64,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "this" {
   count = local.nat_gateway_count
 
-  allocation_id = aws_eip.nat[0].id
+  allocation_id = aws_eip.nat[var.nat_gateway_mode == "per_az" ? count.index : 0].id
   subnet_id     = aws_subnet.public[var.nat_gateway_mode == "per_az" ? count.index : 0].id
 
   tags = {

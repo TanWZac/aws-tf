@@ -81,4 +81,8 @@ module "api_gateway" {
   throttling_rate_limit     = var.api_gateway_throttling_rate_limit
   custom_domain_name        = var.api_gateway_custom_domain_name
   certificate_arn           = var.api_gateway_certificate_arn
+  auto_deploy               = var.api_gateway_auto_deploy
+  enable_jwt_authorizer     = var.api_gateway_enable_jwt_authorizer
+  jwt_issuer                = var.api_gateway_jwt_issuer
+  jwt_audiences             = var.api_gateway_jwt_audiences
 }

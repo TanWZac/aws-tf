@@ -28,6 +28,7 @@ apply:
 	terraform -chdir=$(TF_DIR) apply $(ENV).tfplan
 
 destroy:
+	@[[ "$(CONFIRM)" == "yes" ]] || (echo "Destructive action: run with CONFIRM=yes to proceed"; exit 1)
 	terraform -chdir=$(TF_DIR) destroy -var-file=$(VARS_FILE)
 
 lint:
@@ -39,7 +40,9 @@ security-check:
 	checkov -d . --framework terraform
 
 loadtest-smoke:
-	k6 run loadtest/smoke.js
+	@[[ -n "$(BASE_URL)" ]] || (echo "BASE_URL is required: make loadtest-smoke BASE_URL=https://..."; exit 1)
+	k6 run -e BASE_URL=$(BASE_URL) loadtest/smoke.js
 
 loadtest-spike:
-	k6 run loadtest/spike.js
+	@[[ -n "$(BASE_URL)" ]] || (echo "BASE_URL is required: make loadtest-spike BASE_URL=https://..."; exit 1)
+	k6 run -e BASE_URL=$(BASE_URL) loadtest/spike.js

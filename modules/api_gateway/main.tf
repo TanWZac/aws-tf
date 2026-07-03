@@ -30,21 +30,39 @@ resource "aws_apigatewayv2_integration" "backend" {
 }
 
 resource "aws_apigatewayv2_route" "root" {
-  api_id    = aws_apigatewayv2_api.this.id
-  route_key = "ANY /"
-  target    = "integrations/${aws_apigatewayv2_integration.backend.id}"
+  api_id             = aws_apigatewayv2_api.this.id
+  route_key          = "ANY /"
+  target             = "integrations/${aws_apigatewayv2_integration.backend.id}"
+  authorization_type = var.enable_jwt_authorizer ? "JWT" : "NONE"
+  authorizer_id      = var.enable_jwt_authorizer ? aws_apigatewayv2_authorizer.jwt[0].id : null
 }
 
 resource "aws_apigatewayv2_route" "proxy" {
-  api_id    = aws_apigatewayv2_api.this.id
-  route_key = "ANY /{proxy+}"
-  target    = "integrations/${aws_apigatewayv2_integration.backend.id}"
+  api_id             = aws_apigatewayv2_api.this.id
+  route_key          = "ANY /{proxy+}"
+  target             = "integrations/${aws_apigatewayv2_integration.backend.id}"
+  authorization_type = var.enable_jwt_authorizer ? "JWT" : "NONE"
+  authorizer_id      = var.enable_jwt_authorizer ? aws_apigatewayv2_authorizer.jwt[0].id : null
+}
+
+resource "aws_apigatewayv2_authorizer" "jwt" {
+  count = var.enable_jwt_authorizer ? 1 : 0
+
+  api_id           = aws_apigatewayv2_api.this.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "${var.name_prefix}-jwt-authorizer"
+
+  jwt_configuration {
+    audience = var.jwt_audiences
+    issuer   = var.jwt_issuer
+  }
 }
 
 resource "aws_apigatewayv2_stage" "this" {
   api_id      = aws_apigatewayv2_api.this.id
   name        = var.stage_name
-  auto_deploy = true
+  auto_deploy = var.auto_deploy
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api.arn

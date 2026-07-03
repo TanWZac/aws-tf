@@ -1,0 +1,12 @@
+# Default owner for everything
+*                                   @platform-team
+
+# Production environment changes require explicit review
+environments/prod/                  @platform-team @senior-engineers
+
+# Core infrastructure modules
+modules/platform/                   @platform-team
+modules/service/                    @platform-team
+
+# CI/CD pipeline changes
+.github/                            @platform-team @senior-engineers
