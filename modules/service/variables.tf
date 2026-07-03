@@ -26,31 +26,61 @@ variable "container_image" {
 variable "container_port" {
   description = "Application container port."
   type        = number
+
+  validation {
+    condition     = var.container_port >= 1 && var.container_port <= 65535
+    error_message = "container_port must be between 1 and 65535."
+  }
 }
 
 variable "task_cpu" {
-  description = "CPU units per task."
+  description = "CPU units per task. Must be a valid Fargate CPU value."
   type        = number
+
+  validation {
+    condition     = contains([256, 512, 1024, 2048, 4096, 8192, 16384], var.task_cpu)
+    error_message = "task_cpu must be a valid Fargate CPU value: 256, 512, 1024, 2048, 4096, 8192, or 16384."
+  }
 }
 
 variable "task_memory" {
-  description = "Memory MiB per task."
+  description = "Memory MiB per task. Must be compatible with the chosen task_cpu."
   type        = number
+
+  validation {
+    condition     = var.task_memory >= 512 && var.task_memory % 512 == 0
+    error_message = "task_memory must be a multiple of 512 and at least 512 MiB."
+  }
 }
 
 variable "desired_count" {
   description = "Desired running task count."
   type        = number
+
+  validation {
+    condition     = var.desired_count >= 0
+    error_message = "desired_count must be 0 or greater."
+  }
 }
 
 variable "min_capacity" {
   description = "Minimum autoscaling task count."
   type        = number
+
+  validation {
+    condition     = var.min_capacity >= 0
+    error_message = "min_capacity must be 0 or greater."
+  }
 }
 
 variable "max_capacity" {
   description = "Maximum autoscaling task count."
   type        = number
+
+  validation {
+    condition     = var.max_capacity >= 1
+    error_message = "max_capacity must be at least 1."
+  }
 }
 
 variable "health_check_path" {

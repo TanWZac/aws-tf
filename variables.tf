@@ -84,30 +84,56 @@ variable "app_container_port" {
   description = "Container port exposed by the app service."
   type        = number
   default     = 80
+
+  validation {
+    condition     = var.app_container_port >= 1 && var.app_container_port <= 65535
+    error_message = "app_container_port must be between 1 and 65535."
+  }
 }
 
 variable "app_task_cpu" {
   description = "CPU units for each ECS task."
   type        = number
   default     = 512
+
+  validation {
+    condition     = contains([256, 512, 1024, 2048, 4096, 8192, 16384], var.app_task_cpu)
+    error_message = "app_task_cpu must be a valid Fargate CPU value: 256, 512, 1024, 2048, 4096, 8192, or 16384."
+  }
 }
 
 variable "app_task_memory" {
   description = "Memory in MiB for each ECS task."
   type        = number
   default     = 1024
+
+  validation {
+    condition     = var.app_task_memory >= 512 && var.app_task_memory % 512 == 0
+    error_message = "app_task_memory must be a multiple of 512 and at least 512 MiB."
+  }
 }
 
 variable "app_desired_count" {
   description = "Desired number of ECS tasks."
   type        = number
   default     = 2
+
+  validation {
+    condition     = var.app_desired_count >= 0
+    error_message = "app_desired_count must be 0 or greater."
+  }
 }
 
 variable "app_min_capacity" {
   description = "Minimum ECS service task count for autoscaling."
   type        = number
   default     = 2
+
+  validation {
+    condition     = var.app_min_capacity >= 0
+    error_message = "app_min_capacity must be 0 or greater."
+  }
+}
 }
 
 variable "app_max_capacity" {
@@ -132,6 +158,11 @@ variable "alb_certificate_arn" {
   description = "ACM certificate ARN used by ALB HTTPS listener."
   type        = string
   default     = null
+
+  validation {
+    condition     = !var.enable_alb_https || (var.alb_certificate_arn != null && can(regex("^arn:aws:acm:[a-z0-9-]+:[0-9]{12}:certificate/.+", var.alb_certificate_arn)))
+    error_message = "alb_certificate_arn must be a valid ACM ARN when enable_alb_https is true."
+  }
 }
 
 variable "alb_ssl_policy" {

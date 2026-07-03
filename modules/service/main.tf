@@ -562,6 +562,21 @@ resource "aws_ecs_service" "this" {
   }
 
   depends_on = [aws_lb_listener.http, aws_lb_listener.https]
+
+  lifecycle {
+    precondition {
+      condition     = var.desired_count >= var.min_capacity
+      error_message = "desired_count (${var.desired_count}) must be >= min_capacity (${var.min_capacity})."
+    }
+    precondition {
+      condition     = var.desired_count <= var.max_capacity
+      error_message = "desired_count (${var.desired_count}) must be <= max_capacity (${var.max_capacity})."
+    }
+    precondition {
+      condition     = var.min_capacity <= var.max_capacity
+      error_message = "min_capacity (${var.min_capacity}) must be <= max_capacity (${var.max_capacity})."
+    }
+  }
 }
 
 resource "aws_appautoscaling_target" "ecs" {
