@@ -249,3 +249,41 @@ variable "container_readonly_root_filesystem" {
   type        = bool
   default     = false
 }
+
+# ── Alarms ────────────────────────────────────────────────────────────────────
+
+variable "enable_alarms" {
+  description = "Whether to create CloudWatch metric alarms."
+  type        = bool
+  default     = true
+}
+
+variable "alarm_actions" {
+  description = "List of SNS topic ARNs to notify when an alarm transitions to ALARM state."
+  type        = list(string)
+  default     = []
+}
+
+variable "ok_actions" {
+  description = "List of SNS topic ARNs to notify when an alarm transitions to OK state."
+  type        = list(string)
+  default     = []
+}
+
+variable "cpu_alarm_threshold" {
+  description = "ECS average CPU utilisation percentage that triggers an alarm."
+  type        = number
+  default     = 85
+}
+
+variable "memory_alarm_threshold" {
+  description = "ECS average memory utilisation percentage that triggers an alarm."
+  type        = number
+  default     = 85
+}
+
+variable "http_5xx_alarm_threshold" {
+  description = "Number of ALB 5xx responses per minute that triggers an alarm."
+  type        = number
+  default     = 10
+}

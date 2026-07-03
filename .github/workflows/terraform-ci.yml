@@ -55,6 +55,36 @@ jobs:
       - name: Save plan as text
         run: terraform show -no-color ${{ matrix.env_name }}.tfplan > ${{ matrix.env_name }}.plan.txt
 
+      - name: Save plan as JSON
+        run: terraform show -json ${{ matrix.env_name }}.tfplan > ${{ matrix.env_name }}.plan.json
+
+      - name: Check for destructive changes
+        run: |
+          DESTROYS=$(jq '[.resource_changes[] |
+            select(.change.actions | (contains(["delete"]) or contains(["replace"])))] |
+            length' ${{ matrix.env_name }}.plan.json)
+
+          if [ "$DESTROYS" -gt 0 ]; then
+            echo ""
+            echo "⚠️  DESTRUCTIVE CHANGES DETECTED ($DESTROYS resource(s)):"
+            jq -r '.resource_changes[] |
+              select(.change.actions | (contains(["delete"]) or contains(["replace"]))) |
+              "  \(.address)  [\(.change.actions | join(" + "))]"' \
+              ${{ matrix.env_name }}.plan.json
+            echo ""
+
+            # Block on main branch — require explicit review for prod/stage
+            if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ matrix.env_name }}" != "dev" ]]; then
+              echo "ERROR: Destructive changes to ${{ matrix.env_name }} are not allowed via direct push to main."
+              echo "       Open a pull request and get explicit approval before merging."
+              exit 1
+            else
+              echo "WARNING: Destructive changes present. Review carefully before applying."
+            fi
+          else
+            echo "No destructive changes detected."
+          fi
+
       - name: Upload plan artifact
         uses: actions/upload-artifact@v4
         with:
@@ -62,3 +92,4 @@ jobs:
           path: |
             ${{ matrix.env_name }}.tfplan
             ${{ matrix.env_name }}.plan.txt
+            ${{ matrix.env_name }}.plan.json

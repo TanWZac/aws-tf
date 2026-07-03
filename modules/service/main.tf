@@ -652,3 +652,118 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 data "aws_partition" "current" {}
+
+# ── CloudWatch Alarms ─────────────────────────────────────────────────────────
+
+resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
+  count = var.enable_alarms ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-ecs-cpu-high"
+  alarm_description   = "ECS CPU utilisation above ${var.cpu_alarm_threshold}%"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = var.cpu_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.this.name
+    ServiceName = aws_ecs_service.this.name
+  }
+
+  alarm_actions = var.alarm_actions
+  ok_actions    = var.ok_actions
+}
+
+resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
+  count = var.enable_alarms ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-ecs-memory-high"
+  alarm_description   = "ECS memory utilisation above ${var.memory_alarm_threshold}%"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = var.memory_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.this.name
+    ServiceName = aws_ecs_service.this.name
+  }
+
+  alarm_actions = var.alarm_actions
+  ok_actions    = var.ok_actions
+}
+
+resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_hosts" {
+  count = var.enable_alarms ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-alb-unhealthy-hosts"
+  alarm_description   = "ALB has unhealthy targets — service may be down"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "UnHealthyHostCount"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60
+  statistic           = "Maximum"
+  threshold           = 0
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    LoadBalancer = aws_lb.this.arn_suffix
+    TargetGroup  = aws_lb_target_group.service.arn_suffix
+  }
+
+  alarm_actions = var.alarm_actions
+  ok_actions    = var.ok_actions
+}
+
+resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
+  count = var.enable_alarms ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-alb-5xx-errors"
+  alarm_description   = "ALB 5xx error count above ${var.http_5xx_alarm_threshold} per minute"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "HTTPCode_Target_5XX_Count"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = var.http_5xx_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    LoadBalancer = aws_lb.this.arn_suffix
+  }
+
+  alarm_actions = var.alarm_actions
+  ok_actions    = var.ok_actions
+}
+
+resource "aws_cloudwatch_metric_alarm" "alb_target_response_time" {
+  count = var.enable_alarms ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-alb-response-time"
+  alarm_description   = "ALB target response time p99 above 3 seconds"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "TargetResponseTime"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60
+  extended_statistic  = "p99"
+  threshold           = 3
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    LoadBalancer = aws_lb.this.arn_suffix
+  }
+
+  alarm_actions = var.alarm_actions
+  ok_actions    = var.ok_actions
+}
