@@ -111,3 +111,26 @@ module "redis" {
   snapshot_retention_limit    = var.redis_snapshot_retention_limit
   maintenance_window          = var.redis_maintenance_window
 }
+
+module "frontend" {
+  count  = var.enable_frontend ? 1 : 0
+  source = "./modules/frontend"
+
+  name_prefix  = local.name_prefix
+  environment  = var.environment
+  price_class  = var.frontend_price_class
+
+  custom_domain_name = var.frontend_custom_domain_name
+  certificate_arn    = var.frontend_certificate_arn
+}
+
+module "cognito" {
+  count  = var.enable_cognito ? 1 : 0
+  source = "./modules/cognito"
+
+  name_prefix        = local.name_prefix
+  environment        = var.environment
+  callback_urls      = var.cognito_callback_urls
+  logout_urls        = var.cognito_logout_urls
+  auth_domain_prefix = var.cognito_auth_domain_prefix
+}

@@ -3,6 +3,38 @@ resource "aws_cloudwatch_log_group" "service" {
   retention_in_days = var.log_retention_days
 }
 
+# ── SNS Alerts Topic ─────────────────────────────────────────────────────────
+
+resource "aws_sns_topic" "alerts" {
+  count = var.enable_alarms ? 1 : 0
+  name  = "${var.name_prefix}-alerts"
+}
+
+resource "aws_sns_topic_policy" "alerts" {
+  count = var.enable_alarms ? 1 : 0
+  arn   = aws_sns_topic.alerts[0].arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowCloudWatchPublish"
+        Effect = "Allow"
+        Principal = { Service = "cloudwatch.amazonaws.com" }
+        Action    = "SNS:Publish"
+        Resource  = aws_sns_topic.alerts[0].arn
+      }
+    ]
+  })
+}
+
+resource "aws_sns_topic_subscription" "email" {
+  count     = var.enable_alarms && var.alarm_email != null ? 1 : 0
+  topic_arn = aws_sns_topic.alerts[0].arn
+  protocol  = "email"
+  endpoint  = var.alarm_email
+}
+
 locals {
   create_edge_logs_bucket_effective = var.create_edge_logs_bucket || ((var.enable_alb_access_logs || (var.enable_waf && var.enable_waf_logging)) && var.edge_logs_bucket_name == null)
   create_edge_logs_kms_key_effective = var.enable_edge_logs_kms_encryption && var.create_edge_logs_kms_key && var.edge_logs_kms_key_arn == null
@@ -11,6 +43,7 @@ locals {
   edge_logs_prefix_norm             = trim(var.edge_logs_prefix, "/")
   alb_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/AWSLogs/${data.aws_caller_identity.current.account_id}" : "AWSLogs/${data.aws_caller_identity.current.account_id}"
   waf_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/waf/" : "waf/"
+  effective_alarm_actions           = var.enable_alarms ? [aws_sns_topic.alerts[0].arn] : []
 }
 
 data "aws_iam_policy_document" "edge_logs_kms" {
@@ -677,8 +710,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
     ServiceName = aws_ecs_service.this.name
   }
 
-  alarm_actions = var.alarm_actions
-  ok_actions    = var.ok_actions
+  alarm_actions = local.effective_alarm_actions
+  ok_actions    = local.effective_alarm_actions
 }
 
 resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
@@ -700,8 +733,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
     ServiceName = aws_ecs_service.this.name
   }
 
-  alarm_actions = var.alarm_actions
-  ok_actions    = var.ok_actions
+  alarm_actions = local.effective_alarm_actions
+  ok_actions    = local.effective_alarm_actions
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_hosts" {
@@ -723,8 +756,8 @@ resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_hosts" {
     TargetGroup  = aws_lb_target_group.service.arn_suffix
   }
 
-  alarm_actions = var.alarm_actions
-  ok_actions    = var.ok_actions
+  alarm_actions = local.effective_alarm_actions
+  ok_actions    = local.effective_alarm_actions
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
@@ -745,8 +778,8 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
     LoadBalancer = aws_lb.this.arn_suffix
   }
 
-  alarm_actions = var.alarm_actions
-  ok_actions    = var.ok_actions
+  alarm_actions = local.effective_alarm_actions
+  ok_actions    = local.effective_alarm_actions
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_target_response_time" {
@@ -767,6 +800,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_target_response_time" {
     LoadBalancer = aws_lb.this.arn_suffix
   }
 
-  alarm_actions = var.alarm_actions
-  ok_actions    = var.ok_actions
+  alarm_actions = local.effective_alarm_actions
+  ok_actions    = local.effective_alarm_actions
 }

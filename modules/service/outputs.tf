@@ -17,3 +17,8 @@ output "service_security_group_id" {
   description = "Security group ID attached to ECS tasks."
   value       = aws_security_group.service.id
 }
+
+output "alerts_sns_topic_arn" {
+  description = "ARN of the SNS topic that receives CloudWatch alarm notifications."
+  value       = var.enable_alarms ? aws_sns_topic.alerts[0].arn : null
+}

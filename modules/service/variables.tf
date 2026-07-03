@@ -258,14 +258,20 @@ variable "enable_alarms" {
   default     = true
 }
 
+variable "alarm_email" {
+  description = "Email address to notify when an alarm fires. Leave null to skip email subscription (wire up SNS manually)."
+  type        = string
+  default     = null
+}
+
 variable "alarm_actions" {
-  description = "List of SNS topic ARNs to notify when an alarm transitions to ALARM state."
+  description = "Additional SNS topic ARNs to notify. The module always creates its own SNS topic; use this to add extra targets."
   type        = list(string)
   default     = []
 }
 
 variable "ok_actions" {
-  description = "List of SNS topic ARNs to notify when an alarm transitions to OK state."
+  description = "Additional SNS topic ARNs to notify on alarm recovery."
   type        = list(string)
   default     = []
 }

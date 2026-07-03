@@ -44,3 +44,38 @@ output "api_gateway_access_log_group_name" {
   description = "API Gateway access log group name."
   value       = var.enable_api_gateway && var.enable_app_service ? module.api_gateway[0].access_log_group_name : null
 }
+
+output "frontend_bucket_name" {
+  description = "S3 bucket name for the static frontend assets."
+  value       = var.enable_frontend ? module.frontend[0].bucket_name : null
+}
+
+output "frontend_cloudfront_distribution_id" {
+  description = "CloudFront distribution ID (for cache invalidation)."
+  value       = var.enable_frontend ? module.frontend[0].cloudfront_distribution_id : null
+}
+
+output "frontend_cloudfront_domain" {
+  description = "CloudFront domain name for the frontend."
+  value       = var.enable_frontend ? module.frontend[0].cloudfront_domain_name : null
+}
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID."
+  value       = var.enable_cognito ? module.cognito[0].user_pool_id : null
+}
+
+output "cognito_client_id" {
+  description = "Cognito App Client ID."
+  value       = var.enable_cognito ? module.cognito[0].client_id : null
+}
+
+output "cognito_issuer_url" {
+  description = "Cognito JWT issuer URL — pass to api_gateway_jwt_issuer."
+  value       = var.enable_cognito ? module.cognito[0].issuer_url : null
+}
+
+output "service_alerts_sns_arn" {
+  description = "SNS topic ARN for service CloudWatch alarms."
+  value       = var.enable_app_service ? module.service[0].alerts_sns_topic_arn : null
+}
