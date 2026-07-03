@@ -42,7 +42,7 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   user_pool_add_ons {
-    advanced_security_mode = "AUDIT"
+    advanced_security_mode = var.advanced_security_mode
   }
 
   tags = {

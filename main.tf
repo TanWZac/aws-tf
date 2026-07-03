@@ -63,6 +63,7 @@ module "service" {
   request_scale_out_cooldown        = var.request_scale_out_cooldown
 
   enable_deletion_protection = var.enable_alb_deletion_protection
+  environment                = var.environment
 }
 
 module "api_gateway" {
@@ -70,7 +71,7 @@ module "api_gateway" {
   source = "./modules/api_gateway"
 
   name_prefix = local.name_prefix
-  backend_url = "http://${module.service[0].alb_dns_name}"
+  backend_url = var.enable_alb_https ? "https://${module.service[0].alb_dns_name}" : "http://${module.service[0].alb_dns_name}"
 
   stage_name                = var.api_gateway_stage_name
   allowed_origins           = var.api_gateway_allowed_origins
@@ -85,6 +86,7 @@ module "api_gateway" {
   enable_jwt_authorizer     = var.api_gateway_enable_jwt_authorizer
   jwt_issuer                = var.api_gateway_jwt_issuer
   jwt_audiences             = var.api_gateway_jwt_audiences
+  environment               = var.environment
 }
 
 module "redis" {

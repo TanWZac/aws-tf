@@ -104,3 +104,12 @@ resource "aws_apigatewayv2_api_mapping" "this" {
   domain_name = aws_apigatewayv2_domain_name.this[0].id
   stage       = aws_apigatewayv2_stage.this.id
 }
+
+# ── SSM output ─────────────────────────────────────────────────────────────────
+
+resource "aws_ssm_parameter" "api_gateway_url" {
+  count = var.environment != null ? 1 : 0
+  name  = "/platform/${var.environment}/api-gateway-url"
+  type  = "String"
+  value = aws_apigatewayv2_stage.this.invoke_url
+}

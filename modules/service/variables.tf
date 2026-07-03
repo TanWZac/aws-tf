@@ -293,3 +293,9 @@ variable "http_5xx_alarm_threshold" {
   type        = number
   default     = 10
 }
+
+variable "environment" {
+  description = "Deployment environment (dev | stage | prod). Used in SSM parameter paths."
+  type        = string
+  default     = null
+}

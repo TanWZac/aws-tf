@@ -79,3 +79,9 @@ variable "maintenance_window" {
   type        = string
   default     = "sun:17:00-sun:18:00"
 }
+
+variable "apply_immediately" {
+  description = "Apply changes immediately rather than waiting for the maintenance window. Set false in production."
+  type        = bool
+  default     = false
+}

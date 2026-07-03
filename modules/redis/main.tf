@@ -59,7 +59,9 @@ resource "aws_elasticache_replication_group" "this" {
   snapshot_retention_limit = var.snapshot_retention_limit
   maintenance_window       = var.maintenance_window
 
-  apply_immediately = true
+  # apply_immediately = true can cause in-maintenance-window disruption in prod.
+  # Set to true only in dev/test environments.
+  apply_immediately = var.apply_immediately
 
   tags = {
     Name = local.replication_group_id

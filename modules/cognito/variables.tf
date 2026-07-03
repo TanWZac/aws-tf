@@ -38,3 +38,14 @@ variable "auth_domain_prefix" {
   type        = string
   default     = null
 }
+
+variable "advanced_security_mode" {
+  description = "Cognito advanced security mode. AUDIT logs threats; ENFORCED blocks them. Use ENFORCED for production."
+  type        = string
+  default     = "ENFORCED"
+
+  validation {
+    condition     = contains(["OFF", "AUDIT", "ENFORCED"], var.advanced_security_mode)
+    error_message = "advanced_security_mode must be OFF, AUDIT, or ENFORCED."
+  }
+}

@@ -100,3 +100,9 @@ variable "certificate_arn" {
   type        = string
   default     = null
 }
+
+variable "environment" {
+  description = "Deployment environment. Used in SSM parameter paths."
+  type        = string
+  default     = null
+}

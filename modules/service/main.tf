@@ -803,3 +803,33 @@ resource "aws_cloudwatch_metric_alarm" "alb_target_response_time" {
   alarm_actions = local.effective_alarm_actions
   ok_actions    = local.effective_alarm_actions
 }
+
+# ── SSM outputs (consumed by deploy scripts and downstream repos) ─────────────
+
+resource "aws_ssm_parameter" "ecr_repository_url" {
+  count = var.environment != null ? 1 : 0
+  name  = "/platform/${var.environment}/ecr-repository-url"
+  type  = "String"
+  value = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${var.name_prefix}"
+}
+
+resource "aws_ssm_parameter" "ecs_cluster_name" {
+  count = var.environment != null ? 1 : 0
+  name  = "/platform/${var.environment}/ecs-cluster-name"
+  type  = "String"
+  value = aws_ecs_cluster.this.name
+}
+
+resource "aws_ssm_parameter" "ecs_service_name" {
+  count = var.environment != null ? 1 : 0
+  name  = "/platform/${var.environment}/ecs-service-name"
+  type  = "String"
+  value = aws_ecs_service.this.name
+}
+
+resource "aws_ssm_parameter" "alb_dns_name" {
+  count = var.environment != null ? 1 : 0
+  name  = "/platform/${var.environment}/alb-dns-name"
+  type  = "String"
+  value = aws_lb.this.dns_name
+}

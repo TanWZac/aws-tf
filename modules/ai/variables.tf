@@ -28,3 +28,9 @@ variable "log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "environment" {
+  description = "Deployment environment (dev | stage | prod). Used in SSM parameter paths."
+  type        = string
+  default     = null
+}
