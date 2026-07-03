@@ -15,9 +15,9 @@ if [[ -d "$MODULE_DIR" ]]; then
 fi
 
 mkdir -p "$MODULE_DIR"
-cp modules/_template/main.tf "$MODULE_DIR/main.tf"
-cp modules/_template/variables.tf "$MODULE_DIR/variables.tf"
-cp modules/_template/outputs.tf "$MODULE_DIR/outputs.tf"
+cp scripts/template/main.tf "$MODULE_DIR/main.tf"
+cp scripts/template/variables.tf "$MODULE_DIR/variables.tf"
+cp scripts/template/outputs.tf "$MODULE_DIR/outputs.tf"
 
 # Replace placeholder with actual module name in generated files.
 sed -i "s/template_module/${MODULE_NAME}/g" "$MODULE_DIR"/*.tf
