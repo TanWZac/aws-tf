@@ -1,0 +1,15 @@
+# Terraform state and cache
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.plan
+*.plan.json
+crash.log
+
+# Build outputs from CI
+loadtest/results/
+
+# Editor
+.vscode/
+.idea/
