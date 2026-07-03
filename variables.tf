@@ -134,7 +134,6 @@ variable "app_min_capacity" {
     error_message = "app_min_capacity must be 0 or greater."
   }
 }
-}
 
 variable "app_max_capacity" {
   description = "Maximum ECS service task count for autoscaling."
