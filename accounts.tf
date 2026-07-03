@@ -59,7 +59,7 @@ locals {
   # Adjust the mapping if staging lives in its own account.
   _env_account_ids = {
     prod  = local.prod_account_ids
-    stage = local.prod_account_ids  # change to local.stage_account_ids if staging has its own account
+    stage = local.prod_account_ids  # TODO: change to local.stage_account_ids if staging has its own account — currently staging targets prod accounts
     dev   = local.dev_account_ids
   }
 

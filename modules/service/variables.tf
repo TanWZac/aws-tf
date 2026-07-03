@@ -177,3 +177,45 @@ variable "request_scale_out_cooldown" {
   description = "Scale-out cooldown (seconds) for request-count autoscaling policy."
   type        = number
 }
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days."
+  type        = number
+  default     = 30
+}
+
+variable "health_check_grace_period_seconds" {
+  description = "Seconds to ignore ALB health check failures after a task starts. Prevents rapid cycling during slow startup."
+  type        = number
+  default     = 60
+}
+
+variable "task_role_arn" {
+  description = "IAM role ARN for the ECS task itself (application permissions, e.g. Secrets Manager, S3). Distinct from the execution role."
+  type        = string
+  default     = null
+}
+
+variable "container_environment" {
+  description = "List of plain-text environment variables to inject into the container."
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  default = []
+}
+
+variable "container_secrets" {
+  description = "List of secrets from SSM Parameter Store or Secrets Manager to inject as environment variables. valueFrom must be an SSM or Secrets Manager ARN."
+  type = list(object({
+    name      = string
+    valueFrom = string
+  }))
+  default = []
+}
+
+variable "container_readonly_root_filesystem" {
+  description = "Mount the container root filesystem as read-only. Recommended true for production."
+  type        = bool
+  default     = false
+}

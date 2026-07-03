@@ -22,3 +22,9 @@ variable "sagemaker_instance_type" {
   description = "SageMaker notebook instance type."
   type        = string
 }
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days."
+  type        = number
+  default     = 30
+}

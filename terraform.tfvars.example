@@ -1,6 +1,5 @@
 aws_region                = "us-east-1"
 aws_profile               = null
-allowed_account_ids       = []
 project_name              = "platform-ai"
 environment               = "dev"
 vpc_cidr                  = "10.20.0.0/16"

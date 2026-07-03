@@ -1,3 +1,7 @@
+data "aws_partition" "current" {}
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
 resource "random_id" "suffix" {
   byte_length = 3
 }
@@ -35,6 +39,25 @@ resource "aws_s3_bucket_public_access_block" "dataset" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "dataset" {
+  bucket = aws_s3_bucket.dataset.id
+
+  rule {
+    id     = "expire-old-versions"
+    status = "Enabled"
+
+    filter {}
+
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 }
 
 data "aws_iam_policy_document" "assume_sagemaker" {
@@ -100,7 +123,9 @@ resource "aws_iam_role_policy" "least_privilege" {
           "logs:DescribeLogStreams",
           "logs:PutLogEvents"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:${data.aws_partition.current.partition}:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/${var.name_prefix}/*"
+        ]
       },
       {
         Effect = "Allow"
@@ -160,7 +185,38 @@ resource "aws_ecr_repository" "models" {
   }
 }
 
+resource "aws_ecr_lifecycle_policy" "models" {
+  repository = aws_ecr_repository.models.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 10 tagged images"
+        selection = {
+          tagStatus   = "tagged"
+          tagPrefixList = ["v"]
+          countType   = "imageCountMoreThan"
+          countNumber = 10
+        }
+        action = { type = "expire" }
+      },
+      {
+        rulePriority = 2
+        description  = "Expire untagged images after 7 days"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 7
+        }
+        action = { type = "expire" }
+      }
+    ]
+  })
+}
+
 resource "aws_cloudwatch_log_group" "ai" {
   name              = "/${var.name_prefix}/ai"
-  retention_in_days = 30
+  retention_in_days = var.log_retention_days
 }

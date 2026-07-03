@@ -1,6 +1,6 @@
 resource "aws_cloudwatch_log_group" "service" {
   name              = "/${var.name_prefix}/service"
-  retention_in_days = 30
+  retention_in_days = var.log_retention_days
 }
 
 locals {
@@ -503,12 +503,16 @@ resource "aws_ecs_task_definition" "service" {
   cpu                      = tostring(var.task_cpu)
   memory                   = tostring(var.task_memory)
   execution_role_arn       = aws_iam_role.task_execution.arn
+  task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
     {
       name      = "app"
       image     = var.container_image
       essential = true
+      readonlyRootFilesystem = var.container_readonly_root_filesystem
+      environment = var.container_environment
+      secrets     = var.container_secrets
       portMappings = [
         {
           containerPort = var.container_port
@@ -549,6 +553,8 @@ resource "aws_ecs_service" "this" {
 
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
+
+  health_check_grace_period_seconds = var.health_check_grace_period_seconds
 
   deployment_circuit_breaker {
     enable   = var.enable_deployment_circuit_breaker

@@ -71,12 +71,22 @@ variable "jwt_issuer" {
   description = "JWT issuer URL (e.g. https://cognito-idp.<region>.amazonaws.com/<user_pool_id>). Required when enable_jwt_authorizer is true."
   type        = string
   default     = null
+
+  validation {
+    condition     = !var.enable_jwt_authorizer || var.jwt_issuer != null
+    error_message = "jwt_issuer must be set when enable_jwt_authorizer is true."
+  }
 }
 
 variable "jwt_audiences" {
   description = "List of JWT audiences (app client IDs). Required when enable_jwt_authorizer is true."
   type        = list(string)
   default     = []
+
+  validation {
+    condition     = !var.enable_jwt_authorizer || length(var.jwt_audiences) > 0
+    error_message = "jwt_audiences must contain at least one value when enable_jwt_authorizer is true."
+  }
 }
 
 variable "custom_domain_name" {
