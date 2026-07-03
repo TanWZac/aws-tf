@@ -1,0 +1,12 @@
+# Terraform / state artifacts (scanned by .gitignore already, but explicit here)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# Graphify local artifacts (not for graph)
+graphify-out/cost.json
+
+# Editor
+.vscode/
+.idea/

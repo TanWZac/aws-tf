@@ -26,3 +26,6 @@ env.sh
 # Local backend and load-test outputs
 environments/*/backend.hcl
 loadtest/results/
+
+# Graphify — commit graphify-out/ for team knowledge graph, exclude local-only file
+graphify-out/cost.json
