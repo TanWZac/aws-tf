@@ -181,6 +181,6 @@ Detailed workflow is available in `docs/adding-modules.md`.
 
 ## Notes
 
-- Terraform CLI must be installed locally (>= 1.6).
+- Terraform CLI must be installed locally (>= 1.9).
 - `terraform.tfvars` is intentionally ignored; use environment-specific tfvars files.
 - NAT gateway and SageMaker instances incur cost; tune per environment.
