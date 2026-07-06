@@ -5,12 +5,13 @@ TF_DIR := .
 VARS_FILE := environments/$(ENV)/terraform.tfvars
 BACKEND_FILE := environments/$(ENV)/backend.hcl
 
-.PHONY: help fmt init validate plan apply destroy lint security-check loadtest-smoke loadtest-spike
+.PHONY: help fmt init validate plan apply destroy lint security-check loadtest-smoke loadtest-spike org-init org-plan org-apply org-sync-accounts
 
 help:
 	@echo "Usage: make <target> ENV=<dev|stage|prod>"
 	@echo "Targets: fmt, init, validate, plan, apply, destroy, lint, security-check"
 	@echo "Load tests: loadtest-smoke BASE_URL=https://..., loadtest-spike BASE_URL=https://..."
+	@echo "Org bootstrap (run once, from repo root): org-init, org-plan, org-apply, org-sync-accounts"
 
 fmt:
 	terraform -chdir=$(TF_DIR) fmt -recursive
@@ -46,3 +47,20 @@ loadtest-smoke:
 loadtest-spike:
 	@[[ -n "$(BASE_URL)" ]] || (echo "BASE_URL is required: make loadtest-spike BASE_URL=https://..."; exit 1)
 	k6 run -e BASE_URL=$(BASE_URL) loadtest/spike.js
+
+# ── Org bootstrap (creates the Organization/OUs/accounts in org/) ────────────
+# Separate from ENV-based targets above: run once from repo root, then again
+# whenever account structure changes. See org/README.md.
+
+org-init:
+	terraform -chdir=org init
+
+org-plan:
+	terraform -chdir=org plan -var-file=terraform.tfvars
+
+org-apply:
+	terraform -chdir=org apply -var-file=terraform.tfvars
+
+org-sync-accounts:
+	terraform -chdir=org output -raw accounts_tf_content > accounts.tf
+	@echo "accounts.tf regenerated from org/ outputs. Review the diff before committing."

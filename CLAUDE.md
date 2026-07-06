@@ -7,6 +7,7 @@
 - `modules/api_gateway/` — HTTP API Gateway、JWT 授权器、限流
 - `modules/redis/` — ElastiCache Redis（可选，`enable_redis = true`）
 - `bootstrap/` — 初始化状态后端（S3 桶 + DynamoDB 锁表），仅运行一次
+- `org/` — 创建 AWS Organization、OU 结构与成员账户，独立 state，仅在账户结构变更时运行；账户 ID 通过 `make org-sync-accounts` 写入根目录 `accounts.tf`
 
 ## 关键约束
 - `checks.tf` — 生产保护检查（WAF、HTTPS、NAT per_az、最少 2 个任务）
@@ -32,9 +33,10 @@ CPU: 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384
 4. Redis 等可选模块须有 `count = var.enable_X ? 1 : 0` 开关
 
 ## 禁止
-- 禁止修改 `bootstrap/` 的 `prevent_destroy` 生命周期
+- 禁止修改 `bootstrap/` 或 `org/` 的 `prevent_destroy` 生命周期
 - 禁止在 tfvars 文件中硬编码 AWS 账户 ID
 - 禁止绕过 `checks.tf` 的断言
+- 禁止手动编辑根目录 `accounts.tf` 的 `id` 字段（由 `org/` 生成，见文件头注释）
 
 ## 工作流程规范
 
