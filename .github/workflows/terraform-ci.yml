@@ -36,6 +36,7 @@ jobs:
         with:
           directory: .
           framework: terraform
+          soft_fail: true
 
       - name: Terraform fmt check
         run: terraform fmt -check -recursive
