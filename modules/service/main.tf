@@ -18,8 +18,8 @@ resource "aws_sns_topic_policy" "alerts" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowCloudWatchPublish"
-        Effect = "Allow"
+        Sid       = "AllowCloudWatchPublish"
+        Effect    = "Allow"
         Principal = { Service = "cloudwatch.amazonaws.com" }
         Action    = "SNS:Publish"
         Resource  = aws_sns_topic.alerts[0].arn
@@ -36,14 +36,14 @@ resource "aws_sns_topic_subscription" "email" {
 }
 
 locals {
-  create_edge_logs_bucket_effective = var.create_edge_logs_bucket || ((var.enable_alb_access_logs || (var.enable_waf && var.enable_waf_logging)) && var.edge_logs_bucket_name == null)
+  create_edge_logs_bucket_effective  = var.create_edge_logs_bucket || ((var.enable_alb_access_logs || (var.enable_waf && var.enable_waf_logging)) && var.edge_logs_bucket_name == null)
   create_edge_logs_kms_key_effective = var.enable_edge_logs_kms_encryption && var.create_edge_logs_kms_key && var.edge_logs_kms_key_arn == null
-  edge_logs_bucket_name_effective   = local.create_edge_logs_bucket_effective ? aws_s3_bucket.edge_logs[0].bucket : var.edge_logs_bucket_name
-  edge_logs_kms_key_arn_effective   = var.enable_edge_logs_kms_encryption ? (local.create_edge_logs_kms_key_effective ? aws_kms_key.edge_logs[0].arn : var.edge_logs_kms_key_arn) : null
-  edge_logs_prefix_norm             = trim(var.edge_logs_prefix, "/")
-  alb_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/AWSLogs/${data.aws_caller_identity.current.account_id}" : "AWSLogs/${data.aws_caller_identity.current.account_id}"
-  waf_log_key_prefix                = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/waf/" : "waf/"
-  effective_alarm_actions           = var.enable_alarms ? [aws_sns_topic.alerts[0].arn] : []
+  edge_logs_bucket_name_effective    = local.create_edge_logs_bucket_effective ? aws_s3_bucket.edge_logs[0].bucket : var.edge_logs_bucket_name
+  edge_logs_kms_key_arn_effective    = var.enable_edge_logs_kms_encryption ? (local.create_edge_logs_kms_key_effective ? aws_kms_key.edge_logs[0].arn : var.edge_logs_kms_key_arn) : null
+  edge_logs_prefix_norm              = trim(var.edge_logs_prefix, "/")
+  alb_log_key_prefix                 = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/AWSLogs/${data.aws_caller_identity.current.account_id}" : "AWSLogs/${data.aws_caller_identity.current.account_id}"
+  waf_log_key_prefix                 = local.edge_logs_prefix_norm != "" ? "${local.edge_logs_prefix_norm}/waf/" : "waf/"
+  effective_alarm_actions            = var.enable_alarms ? [aws_sns_topic.alerts[0].arn] : []
 }
 
 data "aws_iam_policy_document" "edge_logs_kms" {
@@ -543,12 +543,12 @@ resource "aws_ecs_task_definition" "service" {
 
   container_definitions = jsonencode([
     {
-      name      = "app"
-      image     = var.container_image
-      essential = true
+      name                   = "app"
+      image                  = var.container_image
+      essential              = true
       readonlyRootFilesystem = var.container_readonly_root_filesystem
-      environment = var.container_environment
-      secrets     = var.container_secrets
+      environment            = var.container_environment
+      secrets                = var.container_secrets
       portMappings = [
         {
           containerPort = var.container_port

@@ -1,5 +1,5 @@
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
   profile = var.aws_profile
 
   allowed_account_ids = local.env_account_ids

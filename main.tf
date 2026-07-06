@@ -102,25 +102,25 @@ module "redis" {
     var.enable_app_service ? [module.service[0].service_security_group_id] : []
   )
 
-  engine                      = var.redis_engine
-  engine_version              = var.redis_engine_version
-  node_type                   = var.redis_node_type
-  node_count                  = var.redis_node_count
-  port                        = var.redis_port
-  at_rest_encryption_enabled  = var.redis_at_rest_encryption_enabled
-  transit_encryption_enabled  = var.redis_transit_encryption_enabled
-  auth_token                  = var.redis_auth_token
-  snapshot_retention_limit    = var.redis_snapshot_retention_limit
-  maintenance_window          = var.redis_maintenance_window
+  engine                     = var.redis_engine
+  engine_version             = var.redis_engine_version
+  node_type                  = var.redis_node_type
+  node_count                 = var.redis_node_count
+  port                       = var.redis_port
+  at_rest_encryption_enabled = var.redis_at_rest_encryption_enabled
+  transit_encryption_enabled = var.redis_transit_encryption_enabled
+  auth_token                 = var.redis_auth_token
+  snapshot_retention_limit   = var.redis_snapshot_retention_limit
+  maintenance_window         = var.redis_maintenance_window
 }
 
 module "frontend" {
   count  = var.enable_frontend ? 1 : 0
   source = "./modules/frontend"
 
-  name_prefix  = local.name_prefix
-  environment  = var.environment
-  price_class  = var.frontend_price_class
+  name_prefix = local.name_prefix
+  environment = var.environment
+  price_class = var.frontend_price_class
 
   custom_domain_name = var.frontend_custom_domain_name
   certificate_arn    = var.frontend_certificate_arn
