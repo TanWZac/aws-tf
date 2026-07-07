@@ -31,10 +31,10 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   schema {
-    name                     = "email"
-    attribute_data_type      = "String"
-    required                 = true
-    mutable                  = true
+    name                = "email"
+    attribute_data_type = "String"
+    required            = true
+    mutable             = true
     string_attribute_constraints {
       min_length = 5
       max_length = 254
@@ -64,9 +64,9 @@ resource "aws_cognito_user_pool_client" "this" {
   callback_urls = var.callback_urls
   logout_urls   = var.logout_urls
 
-  access_token_validity  = 1    # hours
-  id_token_validity      = 1    # hours
-  refresh_token_validity = 30   # days
+  access_token_validity  = 1  # hours
+  id_token_validity      = 1  # hours
+  refresh_token_validity = 30 # days
 
   token_validity_units {
     access_token  = "hours"

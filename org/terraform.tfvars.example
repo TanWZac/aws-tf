@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored — don't commit real account emails.
+
+aws_region   = "us-east-1"
+aws_profile  = "mgmt"
+management_account_id = "REPLACE_WITH_MANAGEMENT_ACCOUNT_ID"
+project_name = "platform-ai"
+
+log_archive_account_email    = "aws+logs@yourcompany.com"
+security_account_email       = "aws+security@yourcompany.com"
+prod_primary_account_email   = "aws+prod@yourcompany.com"
+enable_prod_secondary        = false
+prod_secondary_account_email = null
+dev_account_email            = "aws+dev@yourcompany.com"
+stage_account_email          = "aws+stage@yourcompany.com"
+
+approved_regions = ["us-east-1", "us-west-2"]
+
+monthly_budget_usd  = "500"
+billing_alert_email = "billing-alerts@yourcompany.com"

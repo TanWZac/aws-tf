@@ -24,16 +24,41 @@ It is structured for multi-environment deployments and team collaboration.
 
 - `main.tf`, `variables.tf`, `outputs.tf`: root stack composition
 - `providers.tf`, `versions.tf`: provider/version/backend definitions
+- `accounts.tf`: registry of AWS account IDs per OU — generated from `org/`, see below
 - `modules/platform`: shared platform resources
 - `modules/ai`: AI resources
 - `modules/service`: autoscaling application service resources
 - `modules/_template`: scaffold template for new modules
 - `environments/<env>/terraform.tfvars`: environment-specific values
 - `environments/<env>/backend.hcl.example`: backend config template per environment
+- `bootstrap/`: creates the S3 state bucket + DynamoDB lock table, run once
+- `org/`: creates the AWS Organization, OUs, and member accounts, run once (or
+  whenever account structure changes) — see `org/README.md`
 - `scripts/new-module.sh`: module scaffolder
 - `docs/adding-modules.md`: module extension workflow
 - `.github/workflows/terraform-ci.yml`: CI validation and planning
-- `Makefile`: standardized local commands
+- `Makefile`: standardized local commands, including `org-init`/`org-plan`/`org-apply`/`org-sync-accounts`
+
+## Org & Account Setup (new repos / new accounts)
+
+Before `bootstrap/` and before any `ENV=` deploy, if you don't already have
+your AWS accounts created:
+
+```bash
+cd org
+cp terraform.tfvars.example terraform.tfvars   # fill in account emails etc.
+terraform init
+terraform apply
+cd ..
+make org-sync-accounts   # writes real account IDs into accounts.tf
+```
+
+See `org/README.md` for what this creates (Organization, OUs, prod/dev/stage
+accounts, baseline SCPs, org-wide CloudTrail, budget alert) and what still
+has to be done manually (root MFA, IAM Identity Center first-time enable).
+
+If your accounts already exist, skip `org/` and just fill in the real IDs
+in `accounts.tf` by hand.
 
 ## What Gets Deployed
 
@@ -156,6 +181,6 @@ Detailed workflow is available in `docs/adding-modules.md`.
 
 ## Notes
 
-- Terraform CLI must be installed locally (>= 1.6).
+- Terraform CLI must be installed locally (>= 1.9).
 - `terraform.tfvars` is intentionally ignored; use environment-specific tfvars files.
 - NAT gateway and SageMaker instances incur cost; tune per environment.

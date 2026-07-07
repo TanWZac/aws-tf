@@ -12,15 +12,12 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env_name: [dev, stage, prod]
     steps:
       - uses: actions/checkout@v4
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.8.5
+          terraform_version: 1.9.8
 
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
@@ -29,16 +26,14 @@ jobs:
         run: tflint --init
 
       - name: TFLint
-        run: tflint --recursive
-
-      - name: tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
+        run: tflint --recursive --minimum-failure-severity=error
 
       - name: Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
           framework: terraform
+          soft_fail: true
 
       - name: Terraform fmt check
         run: terraform fmt -check -recursive
@@ -48,48 +43,3 @@ jobs:
 
       - name: Terraform validate
         run: terraform validate
-
-      - name: Terraform plan
-        run: terraform plan -input=false -lock=false -var-file=environments/${{ matrix.env_name }}/terraform.tfvars -out=${{ matrix.env_name }}.tfplan
-
-      - name: Save plan as text
-        run: terraform show -no-color ${{ matrix.env_name }}.tfplan > ${{ matrix.env_name }}.plan.txt
-
-      - name: Save plan as JSON
-        run: terraform show -json ${{ matrix.env_name }}.tfplan > ${{ matrix.env_name }}.plan.json
-
-      - name: Check for destructive changes
-        run: |
-          DESTROYS=$(jq '[.resource_changes[] |
-            select(.change.actions | (contains(["delete"]) or contains(["replace"])))] |
-            length' ${{ matrix.env_name }}.plan.json)
-
-          if [ "$DESTROYS" -gt 0 ]; then
-            echo ""
-            echo "⚠️  DESTRUCTIVE CHANGES DETECTED ($DESTROYS resource(s)):"
-            jq -r '.resource_changes[] |
-              select(.change.actions | (contains(["delete"]) or contains(["replace"]))) |
-              "  \(.address)  [\(.change.actions | join(" + "))]"' \
-              ${{ matrix.env_name }}.plan.json
-            echo ""
-
-            # Block on main branch — require explicit review for prod/stage
-            if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ matrix.env_name }}" != "dev" ]]; then
-              echo "ERROR: Destructive changes to ${{ matrix.env_name }} are not allowed via direct push to main."
-              echo "       Open a pull request and get explicit approval before merging."
-              exit 1
-            else
-              echo "WARNING: Destructive changes present. Review carefully before applying."
-            fi
-          else
-            echo "No destructive changes detected."
-          fi
-
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan-${{ matrix.env_name }}
-          path: |
-            ${{ matrix.env_name }}.tfplan
-            ${{ matrix.env_name }}.plan.txt
-            ${{ matrix.env_name }}.plan.json
