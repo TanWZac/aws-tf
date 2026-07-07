@@ -62,43 +62,37 @@ Once filled in, Terraform will automatically refuse to run against the wrong acc
 
 ---
 
-## Step 2 — Create the Terraform state bucket and lock table
+## Step 2 — Log in to HCP Terraform
 
-Terraform needs a place to store its "memory" (called *state*) so it knows what it has already deployed.
+The root stack stores state and creates runs in HCP Terraform:
 
-For each environment, create these two AWS resources **manually** in the target account before running Terraform:
+- Organization: `tanwzac-org`
+- Workspace: `aws-tf`
+- Workspace ID: `ws-YkExzMvB4gwqvpYN`
 
-1. An **S3 bucket** to store the state file  
-   Example name: `my-project-tf-state-dev`
+Log in before running CLI-driven plans locally:
 
-2. A **DynamoDB table** to prevent two people running Terraform at the same time  
-   Table name: anything, e.g. `my-project-tf-locks`  
-   Primary key: `LockID` (type String)
+```bash
+terraform login
+```
+
+AWS credentials should be configured in the HCP Terraform workspace using
+workspace variables or variable sets. Do not commit AWS credentials or real
+secret tfvars to the repo.
 
 ---
 
-## Step 3 — Configure the backend for each environment
+## Step 3 — Initialize the HCP Terraform workspace
 
-Each environment has a backend config file that tells Terraform where to store its state.
+The backend is configured in root `versions.tf`; do not pass
+`-backend-config=environments/<env>/backend.hcl` for normal root deployments.
 
 ```bash
-cp environments/dev/backend.hcl.example   environments/dev/backend.hcl
-cp environments/stage/backend.hcl.example environments/stage/backend.hcl
-cp environments/prod/backend.hcl.example  environments/prod/backend.hcl
+make init
 ```
 
-Open each `backend.hcl` you just created and fill in the values:
-
-```hcl
-# environments/dev/backend.hcl
-bucket         = "my-project-tf-state-dev"      # ← the S3 bucket you created in Step 2
-key            = "platform-ai/dev/terraform.tfstate"
-region         = "us-east-1"
-dynamodb_table = "my-project-tf-locks"          # ← the DynamoDB table you created in Step 2
-encrypt        = true
-```
-
-> These files are excluded from git (`.gitignore`) so your bucket names stay private.
+`bootstrap/` remains only as an optional helper if you deliberately choose a
+self-managed S3 backend in a different fork.
 
 ---
 
@@ -156,7 +150,7 @@ Use `make` to run Terraform. The `ENV` variable selects which environment to dep
 # 1. Format check (catches whitespace/style issues)
 make fmt
 
-# 2. Download providers and connect to the state bucket
+# 2. Download providers and connect to the HCP Terraform workspace
 make init ENV=dev
 
 # 3. Validate the configuration (catches typos and type errors)
@@ -231,8 +225,8 @@ modules/
 
 environments/
   dev/terraform.tfvars      ← dev-specific values
-  dev/backend.hcl           ← WHERE dev state is stored (you create this, not committed)
-  stage/ prod/              ← same pattern
+  stage/terraform.tfvars    ← stage-specific values
+  prod/terraform.tfvars     ← prod-specific values
 ```
 
 ---
@@ -243,8 +237,9 @@ environments/
 |---|---|---|
 | `Error: No valid credential sources found` | Not authenticated to AWS | Run `aws configure` or set `AWS_PROFILE` |
 | `Error: Account ID ... is not allowed` | Wrong AWS account for this environment | Check `accounts.tf` and your current credentials |
-| `Error acquiring the state lock` | Another Terraform process is running | Wait, or manually release the lock in DynamoDB |
-| `Error: Backend configuration changed` | `backend.hcl` was modified | Run `make init ENV=<env>` again (Terraform will prompt to migrate) |
+| `Error: Required token could not be found` | Not logged in to HCP Terraform | Run `terraform login` and retry `make init` |
+| `Error acquiring the state lock` | Another Terraform/HCP run is active | Wait for the active run to finish, cancel it in HCP Terraform, or unlock from the workspace UI |
+| `Error: Backend configuration changed` | HCP Terraform backend settings changed in `versions.tf` | Run `make init` again and follow Terraform's migration prompt intentionally |
 | `ValidationException: image tag ... already exists` | ECR has `IMMUTABLE` tags and you pushed the same tag twice | Use a unique image tag (e.g. git SHA) for every build |
 
 ---
@@ -253,6 +248,6 @@ environments/
 
 - **`env.sh`** — this file is gitignored. Never commit secrets to this file or any tracked file.
 - **`accounts.tf`** — account IDs are not secret but should be reviewed when changed.
-- **`environments/*/backend.hcl`** — gitignored. Contains bucket names; treat as internal config.
-- **CI** — tfsec and Checkov run on every PR and will block merges on security findings. Review the CI output before merging.
+- **HCP Terraform workspace variables** — store AWS auth and sensitive runtime values there; do not commit them.
+- **CI** — TFLint and Checkov run on every PR. Checkov is blocking with an explicit `.checkov.yml` baseline for existing findings.
 - **Production merges** — the `.github/CODEOWNERS` file requires a review from `@senior-engineers` before any change to `environments/prod/` or `.github/` can merge.

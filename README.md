@@ -11,7 +11,7 @@ It is structured for multi-environment deployments and team collaboration.
 ## Production-Grade Features
 
 - Environment overlays: `environments/dev`, `environments/stage`, `environments/prod`
-- Remote state ready: S3 backend + DynamoDB lock table configuration files
+- Remote runs/state through HCP Terraform (`tanwzac-org/aws-tf`)
 - Guardrails: optional `allowed_account_ids` provider enforcement
 - Standardized tagging via provider `default_tags` + `additional_tags`
 - High-availability networking: NAT mode (`single` or `per_az`) and private VPC endpoints
@@ -23,15 +23,14 @@ It is structured for multi-environment deployments and team collaboration.
 ## Repository Layout
 
 - `main.tf`, `variables.tf`, `outputs.tf`: root stack composition
-- `providers.tf`, `versions.tf`: provider/version/backend definitions
+- `providers.tf`, `versions.tf`: provider/version/HCP Terraform workspace definitions
 - `accounts.tf`: registry of AWS account IDs per OU — generated from `org/`, see below
 - `modules/platform`: shared platform resources
 - `modules/ai`: AI resources
 - `modules/service`: autoscaling application service resources
 - `modules/_template`: scaffold template for new modules
 - `environments/<env>/terraform.tfvars`: environment-specific values
-- `environments/<env>/backend.hcl.example`: backend config template per environment
-- `bootstrap/`: creates the S3 state bucket + DynamoDB lock table, run once
+- `bootstrap/`: optional legacy helper for self-managed S3 state; root deployments use HCP Terraform
 - `org/`: creates the AWS Organization, OUs, and member accounts, run once (or
   whenever account structure changes) — see `org/README.md`
 - `scripts/new-module.sh`: module scaffolder
@@ -96,14 +95,23 @@ Service module:
 
 ## First-Time Setup
 
-1. Create backend config files from examples:
-   - Copy `environments/dev/backend.hcl.example` to `environments/dev/backend.hcl`
-   - Copy `environments/stage/backend.hcl.example` to `environments/stage/backend.hcl`
-   - Copy `environments/prod/backend.hcl.example` to `environments/prod/backend.hcl`
-2. Replace placeholder values for:
-   - S3 state bucket name
-   - DynamoDB lock table name
-3. Ensure AWS credentials are configured.
+1. Log in to HCP Terraform locally:
+
+   ```bash
+   terraform login
+   ```
+
+2. Confirm you can access the HCP Terraform workspace:
+
+   - Organization: `tanwzac-org`
+   - Workspace: `aws-tf`
+   - Workspace ID: `ws-YkExzMvB4gwqvpYN`
+
+3. Ensure AWS credentials/variables are configured for the HCP Terraform workspace.
+   For remote runs, prefer workspace variables or variable sets for AWS auth.
+
+4. Create local `environments/<env>/terraform.tfvars` files when using CLI-driven
+   plans from your machine. Do not commit real tfvars.
 
 ## Deployment Commands
 

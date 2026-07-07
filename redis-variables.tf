@@ -26,6 +26,16 @@ variable "redis_node_count" {
   description = "Number of Redis cache nodes. Use 2 or more for failover."
   type        = number
   default     = 1
+
+  validation {
+    condition     = !var.enable_redis || var.redis_node_count >= 1
+    error_message = "redis_node_count must be at least 1 when Redis is enabled."
+  }
+
+  validation {
+    condition     = !(var.enable_redis && var.environment == "prod") || var.redis_node_count >= 2
+    error_message = "prod Redis requires redis_node_count >= 2 for automatic failover."
+  }
 }
 
 variable "redis_port" {
@@ -51,6 +61,11 @@ variable "redis_auth_token" {
   type        = string
   default     = null
   sensitive   = true
+
+  validation {
+    condition     = !(var.enable_redis && var.environment == "prod") || var.redis_auth_token != null
+    error_message = "prod Redis requires redis_auth_token. Private subnets are not authentication."
+  }
 }
 
 variable "redis_snapshot_retention_limit" {

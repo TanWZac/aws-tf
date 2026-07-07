@@ -12,6 +12,12 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tf_dir:
+          - .
+          - org
     steps:
       - uses: actions/checkout@v4
 
@@ -33,13 +39,14 @@ jobs:
         with:
           directory: .
           framework: terraform
-          soft_fail: true
+          config_file: .checkov.yml
+          soft_fail: false
 
       - name: Terraform fmt check
         run: terraform fmt -check -recursive
 
       - name: Terraform init (backend disabled)
-        run: terraform init -backend=false
+        run: terraform -chdir=${{ matrix.tf_dir }} init -backend=false
 
       - name: Terraform validate
-        run: terraform validate
+        run: terraform -chdir=${{ matrix.tf_dir }} validate
