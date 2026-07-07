@@ -39,6 +39,7 @@ jobs:
         with:
           directory: .
           framework: terraform
+          config_file: .checkov.yml
           soft_fail: false
 
       - name: Terraform fmt check
