@@ -17,7 +17,8 @@
 
 ## 环境管理
 ```bash
-terraform init -backend-config=environments/dev/backend.hcl
+terraform login
+terraform init
 terraform plan -var-file=environments/dev/terraform.tfvars
 terraform apply -var-file=environments/dev/terraform.tfvars
 ```

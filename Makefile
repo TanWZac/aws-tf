@@ -3,13 +3,13 @@ SHELL := /bin/bash
 ENV ?= dev
 TF_DIR := .
 VARS_FILE := environments/$(ENV)/terraform.tfvars
-BACKEND_FILE := environments/$(ENV)/backend.hcl
 
 .PHONY: help fmt init validate plan apply destroy lint security-check loadtest-smoke loadtest-spike org-init org-plan org-apply org-sync-accounts
 
 help:
 	@echo "Usage: make <target> ENV=<dev|stage|prod>"
 	@echo "Targets: fmt, init, validate, plan, apply, destroy, lint, security-check"
+	@echo "Root state/runs use HCP Terraform: tanwzac-org/aws-tf"
 	@echo "Load tests: loadtest-smoke BASE_URL=https://..., loadtest-spike BASE_URL=https://..."
 	@echo "Org bootstrap (run once, from repo root): org-init, org-plan, org-apply, org-sync-accounts"
 
@@ -17,16 +17,16 @@ fmt:
 	terraform -chdir=$(TF_DIR) fmt -recursive
 
 init:
-	terraform -chdir=$(TF_DIR) init -backend-config=$(BACKEND_FILE)
+	terraform -chdir=$(TF_DIR) init
 
 validate:
 	terraform -chdir=$(TF_DIR) validate
 
 plan:
-	terraform -chdir=$(TF_DIR) plan -var-file=$(VARS_FILE) -out=$(ENV).tfplan
+	terraform -chdir=$(TF_DIR) plan -var-file=$(VARS_FILE)
 
 apply:
-	terraform -chdir=$(TF_DIR) apply $(ENV).tfplan
+	terraform -chdir=$(TF_DIR) apply -var-file=$(VARS_FILE)
 
 destroy:
 	@[[ "$(CONFIRM)" == "yes" ]] || (echo "Destructive action: run with CONFIRM=yes to proceed"; exit 1)

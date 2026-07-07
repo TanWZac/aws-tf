@@ -1,7 +1,13 @@
 terraform {
   required_version = ">= 1.9.0"
 
-  backend "s3" {}
+  cloud {
+    organization = "tanwzac-org"
+
+    workspaces {
+      name = "aws-tf"
+    }
+  }
 
   required_providers {
     aws = {

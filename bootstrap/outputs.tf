@@ -1,10 +1,10 @@
 output "state_bucket" {
-  description = "S3 bucket name for Terraform remote state. Copy into environments/*/backend.hcl as: bucket = \"<value>\""
+  description = "Legacy/self-managed backend only: S3 bucket name for Terraform state."
   value       = aws_s3_bucket.state.bucket
 }
 
 output "lock_table" {
-  description = "DynamoDB table name for state locking. Copy into environments/*/backend.hcl as: dynamodb_table = \"<value>\""
+  description = "Legacy/self-managed backend only: DynamoDB table name for state locking."
   value       = aws_dynamodb_table.lock.name
 }
 

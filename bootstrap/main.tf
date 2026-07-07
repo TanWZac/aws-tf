@@ -1,18 +1,18 @@
 # bootstrap/main.tf
 # ─────────────────────────────────────────────────────────────────────────────
-# Creates the S3 bucket and DynamoDB table needed for Terraform remote state.
-# Run ONCE before any other Terraform in this repo.
+# Optional legacy/self-managed backend helper. The root stack now uses
+# HCP Terraform (tanwzac-org/aws-tf), so do not run this for normal deploys.
 #
 # Usage:
 #   cd bootstrap
 #   terraform init          # uses local state — no backend needed
 #   terraform apply
-#   # Copy outputs into environments/*/backend.hcl
+#   # Use outputs only if you intentionally fork back to an S3 backend.
 # ─────────────────────────────────────────────────────────────────────────────
 
 terraform {
   required_version = ">= 1.6.0"
-  # Intentionally local state — this module bootstraps the remote state backend.
+  # Intentionally local state — this optional module bootstraps a self-managed S3 backend.
   required_providers {
     aws = {
       source  = "hashicorp/aws"

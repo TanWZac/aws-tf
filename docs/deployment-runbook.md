@@ -2,11 +2,15 @@
 
 ## 1) Prepare Environment Files
 
-For each environment, copy examples:
+Root deployments use HCP Terraform:
 
-- `cp environments/dev/backend.hcl.example environments/dev/backend.hcl`
-- `cp environments/stage/backend.hcl.example environments/stage/backend.hcl`
-- `cp environments/prod/backend.hcl.example environments/prod/backend.hcl`
+- Organization: `tanwzac-org`
+- Workspace: `aws-tf`
+- Workspace ID: `ws-YkExzMvB4gwqvpYN`
+
+Run `terraform login` locally before CLI-driven plans. Do not create
+`backend.hcl` files for normal root deployments; the root backend is configured
+in `versions.tf`.
 
 Use the tracked tfvars examples as baseline and copy to your local tfvars if needed:
 
