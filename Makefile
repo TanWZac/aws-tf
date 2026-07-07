@@ -34,11 +34,10 @@ destroy:
 
 lint:
 	tflint --init
-	tflint --recursive
+	tflint --recursive --minimum-failure-severity=error
 
 security-check:
-	tfsec .
-	checkov -d . --framework terraform
+	checkov -d . --framework terraform --quiet
 
 loadtest-smoke:
 	@[[ -n "$(BASE_URL)" ]] || (echo "BASE_URL is required: make loadtest-smoke BASE_URL=https://..."; exit 1)

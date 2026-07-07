@@ -93,3 +93,14 @@ variable "billing_alert_email" {
   description = "Where budget threshold alerts (80% actual, 100% forecasted) are sent."
   type        = string
 }
+
+variable "cloudtrail_log_retention_days" {
+  description = "Number of days to retain organization CloudTrail logs."
+  type        = number
+  default     = 2555
+
+  validation {
+    condition     = var.cloudtrail_log_retention_days >= 365
+    error_message = "cloudtrail_log_retention_days must be at least 365."
+  }
+}

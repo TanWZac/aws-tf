@@ -65,6 +65,11 @@ variable "enable_jwt_authorizer" {
   description = "Whether to attach a JWT authorizer to all routes."
   type        = bool
   default     = false
+
+  validation {
+    condition     = !(var.environment == "prod") || var.enable_jwt_authorizer
+    error_message = "prod API Gateway deployments require enable_jwt_authorizer = true."
+  }
 }
 
 variable "jwt_issuer" {
