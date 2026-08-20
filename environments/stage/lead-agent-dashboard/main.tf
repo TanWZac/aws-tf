@@ -51,6 +51,14 @@ module "lead_agent_dashboard" {
 
   existing_task_execution_role_arn = "arn:aws:iam::414819400869:role/lead-agent-task-execution-role"
 
+  ecs_service_name       = "lead-agent-dashboard-service"
+  task_family            = "lead-agent-dashboard-task"
+  container_name         = "lead-agent-dashboard-container"
+  efs_volume_name        = "lead-agent-data"
+  alb_sg_description     = "ALB for lead-agent dashboard - inbound 80 restricted to admin IP"
+  service_sg_description = "Streamlit dashboard for lead-agent - inbound 8501 restricted to admin IP"
+  service_sg_name        = "lead-agent-dashboard-sg"
+
   enable_efs_volume        = true
   efs_file_system_id       = "fs-046bef46c5fb9c780"
   efs_access_point_id      = "fsap-07943c6b0b556df57"

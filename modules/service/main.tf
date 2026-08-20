@@ -239,9 +239,19 @@ locals {
   task_execution_role_arn = var.existing_task_execution_role_arn != null ? var.existing_task_execution_role_arn : aws_iam_role.task_execution[0].arn
 }
 
+locals {
+  ecs_service_name       = var.ecs_service_name != null ? var.ecs_service_name : "${var.name_prefix}-app-svc"
+  task_family            = var.task_family != null ? var.task_family : "${var.name_prefix}-app"
+  container_name         = var.container_name != null ? var.container_name : "app"
+  efs_volume_name        = var.efs_volume_name != null ? var.efs_volume_name : "efs-data"
+  alb_sg_description     = var.alb_sg_description != null ? var.alb_sg_description : "ALB ingress security group."
+  service_sg_description = var.service_sg_description != null ? var.service_sg_description : "ECS service task security group."
+  service_sg_name        = var.service_sg_name != null ? var.service_sg_name : "${var.name_prefix}-service-sg"
+}
+
 resource "aws_security_group" "alb" {
   name        = "${var.name_prefix}-alb-sg"
-  description = "ALB ingress security group."
+  description = local.alb_sg_description
   vpc_id      = var.vpc_id
 
   ingress {
@@ -273,8 +283,8 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "service" {
-  name        = "${var.name_prefix}-service-sg"
-  description = "ECS service task security group."
+  name        = local.service_sg_name
+  description = local.service_sg_description
   vpc_id      = var.vpc_id
 
   ingress {
@@ -545,7 +555,7 @@ locals {
 }
 
 resource "aws_ecs_task_definition" "service" {
-  family                   = "${var.name_prefix}-app"
+  family                   = local.task_family
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = tostring(var.task_cpu)
@@ -556,9 +566,9 @@ resource "aws_ecs_task_definition" "service" {
   dynamic "volume" {
     for_each = var.enable_efs_volume ? [1] : []
     content {
-      name = "efs-data"
+      name = local.efs_volume_name
       efs_volume_configuration {
-        file_system_id = var.efs_file_system_id
+        file_system_id     = var.efs_file_system_id
         transit_encryption = "ENABLED"
         authorization_config {
           access_point_id = var.efs_access_point_id
@@ -570,7 +580,7 @@ resource "aws_ecs_task_definition" "service" {
 
   container_definitions = jsonencode([
     {
-      name                   = "app"
+      name                   = local.container_name
       image                  = var.container_image
       essential              = true
       readonlyRootFilesystem = var.container_readonly_root_filesystem
@@ -585,7 +595,7 @@ resource "aws_ecs_task_definition" "service" {
       ]
       mountPoints = var.enable_efs_volume ? [
         {
-          sourceVolume  = "efs-data"
+          sourceVolume  = local.efs_volume_name
           containerPath = var.efs_container_mount_path
           readOnly      = var.efs_read_only
         }
@@ -603,7 +613,7 @@ resource "aws_ecs_task_definition" "service" {
 }
 
 resource "aws_ecs_service" "this" {
-  name            = "${var.name_prefix}-app-svc"
+  name            = local.ecs_service_name
   cluster         = local.ecs_cluster_id
   task_definition = aws_ecs_task_definition.service.arn
   desired_count   = var.desired_count
@@ -617,7 +627,7 @@ resource "aws_ecs_service" "this" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.service.arn
-    container_name   = "app"
+    container_name   = local.container_name
     container_port   = var.container_port
   }
 

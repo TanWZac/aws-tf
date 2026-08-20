@@ -111,6 +111,48 @@ variable "alb_allowed_cidr_blocks" {
   default     = ["0.0.0.0/0"]
 }
 
+variable "ecs_service_name" {
+  description = "Override for the ECS service's name. Defaults to \"$${name_prefix}-app-svc\" when null."
+  type        = string
+  default     = null
+}
+
+variable "task_family" {
+  description = "Override for the ECS task definition's family. Defaults to \"$${name_prefix}-app\" when null."
+  type        = string
+  default     = null
+}
+
+variable "container_name" {
+  description = "Override for the app container's name. Defaults to \"app\" when null."
+  type        = string
+  default     = null
+}
+
+variable "efs_volume_name" {
+  description = "Override for the EFS volume's name (used in both the task definition's volume block and its mountPoints entry). Defaults to \"efs-data\" when null."
+  type        = string
+  default     = null
+}
+
+variable "alb_sg_description" {
+  description = "Override for the ALB security group's description. Defaults to \"ALB ingress security group.\" when null — changing this after creation forces replacement, so only override at creation time or via import to match a pre-existing group."
+  type        = string
+  default     = null
+}
+
+variable "service_sg_description" {
+  description = "Override for the ECS service security group's description. Defaults to \"ECS service task security group.\" when null — same replacement caveat as alb_sg_description."
+  type        = string
+  default     = null
+}
+
+variable "service_sg_name" {
+  description = "Override for the ECS service security group's name. Defaults to \"$${name_prefix}-service-sg\" when null."
+  type        = string
+  default     = null
+}
+
 variable "enable_https" {
   description = "Whether to enable HTTPS listener on the ALB."
   type        = bool
