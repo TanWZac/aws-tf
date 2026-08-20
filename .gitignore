@@ -23,8 +23,10 @@ terraform.tfvars
 env.sh
 .env
 
-# Local backend and load-test outputs
-environments/*/backend.hcl
+# Load-test outputs
+# environments/*/backend.hcl is COMMITTED: bucket/table names are not secrets and
+# the backend should be reviewable. Nested per-app backends stay local.
+environments/*/*/backend.hcl
 loadtest/results/
 
 # Graphify — commit graphify-out/ for team knowledge graph, exclude local-only file

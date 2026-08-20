@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region for deployment."
   type        = string
-  default     = "us-east-1"
+  default     = "ap-southeast-2"
 }
 
 variable "aws_profile" {
@@ -13,7 +13,7 @@ variable "aws_profile" {
 variable "project_name" {
   description = "Project identifier used in resource names."
   type        = string
-  default     = "platform-ai"
+  default     = "lead-agent"
 }
 
 variable "environment" {
@@ -36,7 +36,7 @@ variable "vpc_cidr" {
 variable "availability_zones" {
   description = "Availability zones used for subnet placement."
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default     = ["ap-southeast-2a", "ap-southeast-2b"]
 }
 
 variable "nat_gateway_mode" {
