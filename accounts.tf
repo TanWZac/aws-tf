@@ -48,9 +48,16 @@ locals {
   # ── OU: Staging ──────────────────────────────────────────────────────────────
   ou_staging = {
     account_stage = {
-      id     = "REPLACE_STAGE_ACCOUNT_ID" # e.g. "444444444444"
+      # This account predates the org/ module (existed before this Terraform
+      # template was adopted) and was never created via org/. Hand-filled;
+      # a future `make org-sync-accounts` run targets a *different*
+      # Organization and would not know about this account, so it will not
+      # be overwritten automatically — if this Organization is ever set up
+      # for real, reconcile this entry deliberately rather than assuming
+      # the sync script owns it.
+      id     = "414819400869"
       name   = "stage"
-      region = "us-east-1"
+      region = "ap-southeast-2"
     }
   }
 
