@@ -153,6 +153,24 @@ variable "service_sg_name" {
   default     = null
 }
 
+variable "log_group_name" {
+  description = "Override for the CloudWatch log group name. Defaults to \"/$${name_prefix}/service\" when null."
+  type        = string
+  default     = null
+}
+
+variable "awslogs_stream_prefix" {
+  description = "Override for the container's awslogs-stream-prefix. Defaults to \"app\" when null."
+  type        = string
+  default     = null
+}
+
+variable "container_command" {
+  description = "Override for the container's command. Defaults to omitting the command key (uses the image's default ENTRYPOINT/CMD) when null."
+  type        = list(string)
+  default     = null
+}
+
 variable "enable_https" {
   description = "Whether to enable HTTPS listener on the ALB."
   type        = bool

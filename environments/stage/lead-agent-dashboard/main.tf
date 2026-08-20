@@ -59,6 +59,14 @@ module "lead_agent_dashboard" {
   service_sg_description = "Streamlit dashboard for lead-agent - inbound 8501 restricted to admin IP"
   service_sg_name        = "lead-agent-dashboard-sg"
 
+  log_group_name         = "/ecs/lead-agent-dashboard"
+  awslogs_stream_prefix   = "dashboard"
+  container_command       = [
+    "streamlit", "run", "agent/streamlit_app.py",
+    "--server.port=8501", "--server.address=0.0.0.0",
+    "--server.headless=true",
+  ]
+
   enable_efs_volume        = true
   efs_file_system_id       = "fs-046bef46c5fb9c780"
   efs_access_point_id      = "fsap-07943c6b0b556df57"

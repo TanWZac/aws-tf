@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "service" {
-  name              = "/${var.name_prefix}/service"
+  name              = local.log_group_name
   retention_in_days = var.log_retention_days
 }
 
@@ -247,6 +247,11 @@ locals {
   alb_sg_description     = var.alb_sg_description != null ? var.alb_sg_description : "ALB ingress security group."
   service_sg_description = var.service_sg_description != null ? var.service_sg_description : "ECS service task security group."
   service_sg_name        = var.service_sg_name != null ? var.service_sg_name : "${var.name_prefix}-service-sg"
+}
+
+locals {
+  log_group_name        = var.log_group_name != null ? var.log_group_name : "/${var.name_prefix}/service"
+  awslogs_stream_prefix  = var.awslogs_stream_prefix != null ? var.awslogs_stream_prefix : "app"
 }
 
 resource "aws_security_group" "alb" {
@@ -579,36 +584,39 @@ resource "aws_ecs_task_definition" "service" {
   }
 
   container_definitions = jsonencode([
-    {
-      name                   = local.container_name
-      image                  = var.container_image
-      essential              = true
-      readonlyRootFilesystem = var.container_readonly_root_filesystem
-      environment            = var.container_environment
-      secrets                = var.container_secrets
-      portMappings = [
-        {
-          containerPort = var.container_port
-          hostPort      = var.container_port
-          protocol      = "tcp"
+    merge(
+      {
+        name                   = local.container_name
+        image                  = var.container_image
+        essential              = true
+        readonlyRootFilesystem = var.container_readonly_root_filesystem
+        environment            = var.container_environment
+        secrets                = var.container_secrets
+        portMappings = [
+          {
+            containerPort = var.container_port
+            hostPort      = var.container_port
+            protocol      = "tcp"
+          }
+        ]
+        mountPoints = var.enable_efs_volume ? [
+          {
+            sourceVolume  = local.efs_volume_name
+            containerPath = var.efs_container_mount_path
+            readOnly      = var.efs_read_only
+          }
+        ] : []
+        logConfiguration = {
+          logDriver = "awslogs"
+          options = {
+            awslogs-group         = aws_cloudwatch_log_group.service.name
+            awslogs-region        = data.aws_region.current.name
+            awslogs-stream-prefix = local.awslogs_stream_prefix
+          }
         }
-      ]
-      mountPoints = var.enable_efs_volume ? [
-        {
-          sourceVolume  = local.efs_volume_name
-          containerPath = var.efs_container_mount_path
-          readOnly      = var.efs_read_only
-        }
-      ] : []
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.service.name
-          awslogs-region        = data.aws_region.current.name
-          awslogs-stream-prefix = "app"
-        }
-      }
-    }
+      },
+      var.container_command != null ? { command = var.container_command } : {}
+    )
   ])
 }
 
