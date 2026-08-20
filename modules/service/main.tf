@@ -251,7 +251,7 @@ locals {
 
 locals {
   log_group_name        = var.log_group_name != null ? var.log_group_name : "/${var.name_prefix}/service"
-  awslogs_stream_prefix  = var.awslogs_stream_prefix != null ? var.awslogs_stream_prefix : "app"
+  awslogs_stream_prefix = var.awslogs_stream_prefix != null ? var.awslogs_stream_prefix : "app"
 }
 
 resource "aws_security_group" "alb" {
