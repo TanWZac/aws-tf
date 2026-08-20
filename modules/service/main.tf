@@ -586,12 +586,12 @@ resource "aws_ecs_task_definition" "service" {
   container_definitions = jsonencode([
     merge(
       {
-        name                   = local.container_name
-        image                  = var.container_image
-        essential              = true
-        readonlyRootFilesystem = var.container_readonly_root_filesystem
-        environment            = var.container_environment
-        secrets                = var.container_secrets
+        name           = local.container_name
+        image          = var.container_image
+        essential      = true
+        environment    = var.container_environment
+        volumesFrom    = []
+        systemControls = []
         portMappings = [
           {
             containerPort = var.container_port
@@ -615,7 +615,9 @@ resource "aws_ecs_task_definition" "service" {
           }
         }
       },
-      var.container_command != null ? { command = var.container_command } : {}
+      var.container_command != null ? { command = var.container_command } : {},
+      var.omit_readonly_root_filesystem ? {} : { readonlyRootFilesystem = var.container_readonly_root_filesystem },
+      var.omit_container_secrets ? {} : { secrets = var.container_secrets }
     )
   ])
 }

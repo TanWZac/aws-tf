@@ -38,7 +38,7 @@ module "lead_agent_dashboard" {
   existing_ecs_cluster_id   = "arn:aws:ecs:ap-southeast-2:414819400869:cluster/lead-agent-cluster"
   existing_ecs_cluster_name = "lead-agent-cluster"
 
-  container_image   = "414819400869.dkr.ecr.ap-southeast-2.amazonaws.com/lead-agent:latest"
+  container_image   = "414819400869.dkr.ecr.ap-southeast-2.amazonaws.com/lead-agent:c91ea1e"
   container_port    = 8501
   task_cpu          = 256
   task_memory       = 512
@@ -66,6 +66,9 @@ module "lead_agent_dashboard" {
     "--server.port=8501", "--server.address=0.0.0.0",
     "--server.headless=true",
   ]
+
+  omit_readonly_root_filesystem = true
+  omit_container_secrets        = true
 
   enable_efs_volume        = true
   efs_file_system_id       = "fs-046bef46c5fb9c780"

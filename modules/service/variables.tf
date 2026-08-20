@@ -333,6 +333,18 @@ variable "container_readonly_root_filesystem" {
   default     = false
 }
 
+variable "omit_readonly_root_filesystem" {
+  description = "When true, omit the readonlyRootFilesystem key from the container definition entirely instead of emitting container_readonly_root_filesystem's value. Use when adopting a pre-existing task definition that never set this key."
+  type        = bool
+  default     = false
+}
+
+variable "omit_container_secrets" {
+  description = "When true, omit the secrets key from the container definition entirely instead of emitting container_secrets's value. Use when adopting a pre-existing task definition that never set this key."
+  type        = bool
+  default     = false
+}
+
 variable "enable_efs_volume" {
   description = "Whether to mount an EFS access point into the app container."
   type        = bool
