@@ -29,3 +29,6 @@ loadtest/results/
 
 # Graphify — commit graphify-out/ for team knowledge graph, exclude local-only file
 graphify-out/cost.json
+
+# Plan-scoped worktrees (superpowers subagent-driven-development)
+.worktrees/
