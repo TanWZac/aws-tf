@@ -547,6 +547,21 @@ resource "aws_ecs_task_definition" "service" {
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = var.task_role_arn
 
+  dynamic "volume" {
+    for_each = var.enable_efs_volume ? [1] : []
+    content {
+      name = "efs-data"
+      efs_volume_configuration {
+        file_system_id = var.efs_file_system_id
+        transit_encryption = "ENABLED"
+        authorization_config {
+          access_point_id = var.efs_access_point_id
+          iam             = "ENABLED"
+        }
+      }
+    }
+  }
+
   container_definitions = jsonencode([
     {
       name                   = "app"
@@ -562,6 +577,13 @@ resource "aws_ecs_task_definition" "service" {
           protocol      = "tcp"
         }
       ]
+      mountPoints = var.enable_efs_volume ? [
+        {
+          sourceVolume  = "efs-data"
+          containerPath = var.efs_container_mount_path
+          readOnly      = var.efs_read_only
+        }
+      ] : []
       logConfiguration = {
         logDriver = "awslogs"
         options = {

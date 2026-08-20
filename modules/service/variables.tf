@@ -267,6 +267,46 @@ variable "container_readonly_root_filesystem" {
   default     = false
 }
 
+variable "enable_efs_volume" {
+  description = "Whether to mount an EFS access point into the app container."
+  type        = bool
+  default     = false
+}
+
+variable "efs_file_system_id" {
+  description = "EFS file system ID to mount. Required when enable_efs_volume is true."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = !var.enable_efs_volume || var.efs_file_system_id != null
+    error_message = "efs_file_system_id must be set when enable_efs_volume is true."
+  }
+}
+
+variable "efs_access_point_id" {
+  description = "EFS access point ID to mount via IAM authorization. Required when enable_efs_volume is true."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = !var.enable_efs_volume || var.efs_access_point_id != null
+    error_message = "efs_access_point_id must be set when enable_efs_volume is true."
+  }
+}
+
+variable "efs_container_mount_path" {
+  description = "Path inside the container where the EFS access point is mounted."
+  type        = string
+  default     = "/mnt/efs"
+}
+
+variable "efs_read_only" {
+  description = "Whether the container's EFS mount point is read-only."
+  type        = bool
+  default     = true
+}
+
 # ── Alarms ────────────────────────────────────────────────────────────────────
 
 variable "enable_alarms" {
