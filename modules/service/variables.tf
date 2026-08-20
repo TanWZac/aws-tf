@@ -105,6 +105,12 @@ variable "health_check_path" {
   type        = string
 }
 
+variable "alb_allowed_cidr_blocks" {
+  description = "CIDR blocks allowed to reach the ALB on HTTP/HTTPS. Defaults to open; restrict for internal-only services."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "enable_https" {
   description = "Whether to enable HTTPS listener on the ALB."
   type        = bool
