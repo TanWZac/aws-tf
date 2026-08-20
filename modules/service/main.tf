@@ -224,13 +224,19 @@ data "aws_iam_policy_document" "task_assume_role" {
 }
 
 resource "aws_iam_role" "task_execution" {
+  count              = var.existing_task_execution_role_arn == null ? 1 : 0
   name               = "${var.name_prefix}-ecs-exec-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume_role.json
 }
 
 resource "aws_iam_role_policy_attachment" "task_execution" {
-  role       = aws_iam_role.task_execution.name
+  count      = var.existing_task_execution_role_arn == null ? 1 : 0
+  role       = aws_iam_role.task_execution[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+locals {
+  task_execution_role_arn = var.existing_task_execution_role_arn != null ? var.existing_task_execution_role_arn : aws_iam_role.task_execution[0].arn
 }
 
 resource "aws_security_group" "alb" {
@@ -544,7 +550,7 @@ resource "aws_ecs_task_definition" "service" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = tostring(var.task_cpu)
   memory                   = tostring(var.task_memory)
-  execution_role_arn       = aws_iam_role.task_execution.arn
+  execution_role_arn       = local.task_execution_role_arn
   task_role_arn            = var.task_role_arn
 
   dynamic "volume" {

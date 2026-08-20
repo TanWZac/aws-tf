@@ -49,6 +49,8 @@ module "lead_agent_dashboard" {
 
   task_role_arn = "arn:aws:iam::414819400869:role/lead-agent-task-role"
 
+  existing_task_execution_role_arn = "arn:aws:iam::414819400869:role/lead-agent-task-execution-role"
+
   enable_efs_volume        = true
   efs_file_system_id       = "fs-046bef46c5fb9c780"
   efs_access_point_id      = "fsap-07943c6b0b556df57"

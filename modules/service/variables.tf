@@ -362,3 +362,9 @@ variable "environment" {
   type        = string
   default     = null
 }
+
+variable "existing_task_execution_role_arn" {
+  description = "ARN of an existing ECS task execution role to reuse instead of creating one. When set, the module creates no execution role."
+  type        = string
+  default     = null
+}
