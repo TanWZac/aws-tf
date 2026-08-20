@@ -71,11 +71,11 @@ module "lead_agent_dashboard" {
 
   enable_deletion_protection = true
   enable_alb_access_logs     = false
-  enable_waf_logging             = false
-  create_edge_logs_bucket        = false
-  edge_logs_bucket_name          = null
-  edge_logs_prefix               = "edge"
-  edge_logs_retention_days       = 30
+  enable_waf_logging         = false
+  create_edge_logs_bucket    = false
+  edge_logs_bucket_name      = null
+  edge_logs_prefix           = "edge"
+  edge_logs_retention_days   = 30
 
   enable_edge_logs_kms_encryption = false
   create_edge_logs_kms_key        = false
