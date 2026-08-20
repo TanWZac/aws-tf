@@ -69,7 +69,7 @@ locals {
     dev   = local.dev_account_ids
   }
 
-  # Resolved for the current var.environment. Falls back to [] (no guardrail)
-  # if a matching entry is not found, preserving backward-compatible behaviour.
-  env_account_ids = lookup(local._env_account_ids, var.environment, [])
+  # Resolved for the current var.environment. Do not fall back to []: an empty
+  # allowed_account_ids disables the account guardrail exactly when it is needed.
+  env_account_ids = local._env_account_ids[var.environment]
 }

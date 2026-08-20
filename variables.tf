@@ -48,6 +48,11 @@ variable "nat_gateway_mode" {
     condition     = contains(["none", "single", "per_az"], var.nat_gateway_mode)
     error_message = "nat_gateway_mode must be one of: none, single, per_az."
   }
+
+  validation {
+    condition     = var.environment != "prod" || var.nat_gateway_mode == "per_az"
+    error_message = "prod requires nat_gateway_mode = per_az for AZ-level NAT resilience."
+  }
 }
 
 variable "enable_vpc_endpoints" {
@@ -122,6 +127,11 @@ variable "app_desired_count" {
     condition     = var.app_desired_count >= 0
     error_message = "app_desired_count must be 0 or greater."
   }
+
+  validation {
+    condition     = var.app_desired_count >= var.app_min_capacity && var.app_desired_count <= var.app_max_capacity
+    error_message = "app_desired_count must be between app_min_capacity and app_max_capacity."
+  }
 }
 
 variable "app_min_capacity" {
@@ -133,12 +143,27 @@ variable "app_min_capacity" {
     condition     = var.app_min_capacity >= 0
     error_message = "app_min_capacity must be 0 or greater."
   }
+
+  validation {
+    condition     = var.environment != "prod" || var.app_min_capacity >= 2
+    error_message = "prod requires app_min_capacity >= 2 for high availability."
+  }
 }
 
 variable "app_max_capacity" {
   description = "Maximum ECS service task count for autoscaling."
   type        = number
   default     = 10
+
+  validation {
+    condition     = var.app_max_capacity >= 1
+    error_message = "app_max_capacity must be at least 1."
+  }
+
+  validation {
+    condition     = var.app_min_capacity <= var.app_max_capacity
+    error_message = "app_min_capacity must not exceed app_max_capacity."
+  }
 }
 
 variable "app_health_check_path" {
@@ -151,6 +176,11 @@ variable "enable_alb_https" {
   description = "Whether to expose the app service through HTTPS listener on ALB."
   type        = bool
   default     = false
+
+  validation {
+    condition     = var.environment != "prod" || var.enable_alb_https
+    error_message = "prod requires enable_alb_https = true. Do not expose production traffic over plain HTTP."
+  }
 }
 
 variable "alb_certificate_arn" {
@@ -174,6 +204,11 @@ variable "enable_waf" {
   description = "Whether to attach AWS WAF web ACL to the ALB."
   type        = bool
   default     = false
+
+  validation {
+    condition     = !contains(["stage", "prod"], var.environment) || var.enable_waf
+    error_message = "stage and prod require enable_waf = true."
+  }
 }
 
 variable "waf_rate_limit" {
@@ -356,6 +391,11 @@ variable "api_gateway_enable_jwt_authorizer" {
   description = "Whether to attach a JWT authorizer to all API Gateway routes."
   type        = bool
   default     = false
+
+  validation {
+    condition     = !(var.environment == "prod" && var.enable_api_gateway) || var.api_gateway_enable_jwt_authorizer
+    error_message = "prod API Gateway deployments require api_gateway_enable_jwt_authorizer = true."
+  }
 }
 
 variable "api_gateway_jwt_issuer" {

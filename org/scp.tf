@@ -65,10 +65,16 @@ data "aws_iam_policy_document" "protect_security_services" {
     actions = [
       "cloudtrail:StopLogging",
       "cloudtrail:DeleteTrail",
+      "cloudtrail:PutEventSelectors",
+      "cloudtrail:UpdateTrail",
       "guardduty:DeleteDetector",
       "guardduty:DisassociateFromMasterAccount",
+      "guardduty:StopMonitoringMembers",
       "config:StopConfigurationRecorder",
       "config:DeleteConfigurationRecorder",
+      "config:DeleteDeliveryChannel",
+      "securityhub:DisableSecurityHub",
+      "securityhub:DisassociateFromAdministratorAccount",
     ]
     resources = ["*"]
   }
@@ -80,7 +86,16 @@ resource "aws_organizations_policy" "protect_security_services" {
   content = data.aws_iam_policy_document.protect_security_services.json
 }
 
-resource "aws_organizations_policy_attachment" "protect_security_workloads" {
+locals {
+  security_guardrail_target_ids = toset([
+    aws_organizations_organizational_unit.workloads.id,
+    aws_organizations_organizational_unit.security.id,
+  ])
+}
+
+resource "aws_organizations_policy_attachment" "protect_security_services" {
+  for_each = local.security_guardrail_target_ids
+
   policy_id = aws_organizations_policy.protect_security_services.id
-  target_id = aws_organizations_organizational_unit.workloads.id
+  target_id = each.value
 }

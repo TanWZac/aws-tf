@@ -49,6 +49,44 @@ resource "aws_s3_bucket" "state" {
   }
 }
 
+data "aws_partition" "current" {}
+
+data "aws_iam_policy_document" "state_kms_key" {
+  statement {
+    sid    = "AllowAccountAdministration"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_kms_key" "state" {
+  description             = "KMS key for ${var.project_name} Terraform state"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.state_kms_key.json
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Name      = "${var.project_name}-tf-state"
+    ManagedBy = "terraform-bootstrap"
+  }
+}
+
+resource "aws_kms_alias" "state" {
+  name          = "alias/${var.project_name}-tf-state"
+  target_key_id = aws_kms_key.state.key_id
+}
+
 resource "aws_s3_bucket_versioning" "state" {
   bucket = aws_s3_bucket.state.id
 
@@ -62,8 +100,11 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.state.arn
     }
+
+    bucket_key_enabled = true
   }
 }
 
@@ -120,3 +161,5 @@ resource "aws_dynamodb_table" "lock" {
     ManagedBy = "terraform-bootstrap"
   }
 }
+
+data "aws_caller_identity" "current" {}

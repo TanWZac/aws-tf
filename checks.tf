@@ -10,12 +10,16 @@
 
 # ── Account ID placeholders ───────────────────────────────────────────────────
 
-check "no_placeholder_account_ids" {
-  assert {
-    condition = alltrue([
-      for id in local.env_account_ids : !startswith(id, "REPLACE_")
-    ])
-    error_message = "One or more AWS account IDs in accounts.tf contain placeholder values (REPLACE_*). Update them before deploying to production."
+resource "terraform_data" "account_id_guardrail" {
+  input = local.env_account_ids
+
+  lifecycle {
+    precondition {
+      condition = alltrue([
+        for id in local.env_account_ids : can(regex("^[0-9]{12}$", id))
+      ])
+      error_message = "accounts.tf must contain real 12-digit AWS account IDs for the selected environment before planning or applying."
+    }
   }
 }
 

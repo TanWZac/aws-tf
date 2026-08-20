@@ -2,6 +2,17 @@ data "aws_partition" "current" {}
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
+locals {
+  sagemaker_resource_prefix = replace(var.name_prefix, "_", "-")
+  sagemaker_managed_resources = [
+    "arn:${data.aws_partition.current.partition}:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:training-job/${local.sagemaker_resource_prefix}-*",
+    "arn:${data.aws_partition.current.partition}:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:processing-job/${local.sagemaker_resource_prefix}-*",
+    "arn:${data.aws_partition.current.partition}:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:model/${local.sagemaker_resource_prefix}-*",
+    "arn:${data.aws_partition.current.partition}:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:endpoint/${local.sagemaker_resource_prefix}-*",
+    "arn:${data.aws_partition.current.partition}:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:endpoint-config/${local.sagemaker_resource_prefix}-*",
+  ]
+}
+
 resource "random_id" "suffix" {
   byte_length = 3
 }
@@ -130,8 +141,6 @@ resource "aws_iam_role_policy" "least_privilege" {
       {
         Effect = "Allow"
         Action = [
-          "sagemaker:List*",
-          "sagemaker:Describe*",
           "sagemaker:CreateTrainingJob",
           "sagemaker:CreateProcessingJob",
           "sagemaker:CreateModel",
@@ -141,7 +150,27 @@ resource "aws_iam_role_policy" "least_privilege" {
           "sagemaker:DeleteEndpoint",
           "sagemaker:InvokeEndpoint"
         ]
+        Resource = local.sagemaker_managed_resources
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:List*",
+          "sagemaker:Describe*"
+        ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = aws_iam_role.sagemaker_execution.arn
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "sagemaker.amazonaws.com"
+          }
+        }
       }
     ]
   })
