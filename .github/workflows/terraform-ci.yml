@@ -10,20 +10,17 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  lint:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        tf_dir:
-          - .
-          - org
     steps:
       - uses: actions/checkout@v4
 
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
 
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
@@ -41,8 +38,21 @@ jobs:
           framework: terraform
           soft_fail: true
 
-      - name: Terraform fmt check
-        run: terraform fmt -check -recursive
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tf_dir:
+          - .
+          - org
+          - bootstrap
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
 
       - name: Terraform init (backend disabled)
         run: terraform -chdir=${{ matrix.tf_dir }} init -backend=false
