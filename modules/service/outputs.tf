@@ -5,7 +5,7 @@ output "alb_dns_name" {
 
 output "ecs_cluster_name" {
   description = "ECS cluster name."
-  value       = aws_ecs_cluster.this.name
+  value       = local.ecs_cluster_name
 }
 
 output "ecs_service_name" {

@@ -8,6 +8,23 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "existing_ecs_cluster_id" {
+  description = "ID of an existing ECS cluster to deploy into. When set (together with existing_ecs_cluster_name), the module skips creating its own cluster — used to co-locate a second service in an already-running cluster."
+  type        = string
+  default     = null
+}
+
+variable "existing_ecs_cluster_name" {
+  description = "Name of an existing ECS cluster to deploy into. Must be set together with existing_ecs_cluster_id."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = (var.existing_ecs_cluster_id == null) == (var.existing_ecs_cluster_name == null)
+    error_message = "existing_ecs_cluster_id and existing_ecs_cluster_name must both be set, or both left null."
+  }
+}
+
 variable "public_subnet_ids" {
   description = "Public subnet IDs for ALB placement."
   type        = list(string)

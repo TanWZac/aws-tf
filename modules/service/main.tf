@@ -529,7 +529,13 @@ resource "aws_wafv2_web_acl_logging_configuration" "this" {
 }
 
 resource "aws_ecs_cluster" "this" {
-  name = "${var.name_prefix}-ecs-cluster"
+  count = var.existing_ecs_cluster_id == null ? 1 : 0
+  name  = "${var.name_prefix}-ecs-cluster"
+}
+
+locals {
+  ecs_cluster_id   = var.existing_ecs_cluster_id != null ? var.existing_ecs_cluster_id : aws_ecs_cluster.this[0].id
+  ecs_cluster_name = var.existing_ecs_cluster_name != null ? var.existing_ecs_cluster_name : aws_ecs_cluster.this[0].name
 }
 
 resource "aws_ecs_task_definition" "service" {
@@ -570,7 +576,7 @@ resource "aws_ecs_task_definition" "service" {
 
 resource "aws_ecs_service" "this" {
   name            = "${var.name_prefix}-app-svc"
-  cluster         = aws_ecs_cluster.this.id
+  cluster         = local.ecs_cluster_id
   task_definition = aws_ecs_task_definition.service.arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
@@ -618,7 +624,7 @@ resource "aws_ecs_service" "this" {
 resource "aws_appautoscaling_target" "ecs" {
   max_capacity       = var.max_capacity
   min_capacity       = var.min_capacity
-  resource_id        = "service/${aws_ecs_cluster.this.name}/${aws_ecs_service.this.name}"
+  resource_id        = "service/${local.ecs_cluster_name}/${aws_ecs_service.this.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
@@ -706,7 +712,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.this.name
+    ClusterName = local.ecs_cluster_name
     ServiceName = aws_ecs_service.this.name
   }
 
@@ -729,7 +735,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.this.name
+    ClusterName = local.ecs_cluster_name
     ServiceName = aws_ecs_service.this.name
   }
 
@@ -817,7 +823,7 @@ resource "aws_ssm_parameter" "ecs_cluster_name" {
   count = var.environment != null ? 1 : 0
   name  = "/platform/${var.environment}/ecs-cluster-name"
   type  = "String"
-  value = aws_ecs_cluster.this.name
+  value = local.ecs_cluster_name
 }
 
 resource "aws_ssm_parameter" "ecs_service_name" {
