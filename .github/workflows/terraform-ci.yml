@@ -59,3 +59,33 @@ jobs:
 
       - name: Terraform validate
         run: terraform -chdir=${{ matrix.tf_dir }} validate
+
+  plan:
+    # Fork PRs cannot access secrets and must not receive AWS credentials.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    needs: [lint, validate]
+    permissions:
+      id-token: write # mint the OIDC token
+      contents: read
+    environment: stage # add required reviewers here before wiring prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform init
+        run: terraform init -backend-config=environments/stage/backend.hcl
+
+      # No -var-file: environments/*/terraform.tfvars is gitignored. Supply values
+      # via TF_VAR_* from repo/environment variables, or commit a CI tfvars, before
+      # enabling this job.
+      - name: Terraform plan
+        run: terraform plan -input=false -lock-timeout=5m
