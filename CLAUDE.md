@@ -52,3 +52,11 @@ CPU: 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384
 claude-mem（跨会话记忆）：
   /plugin marketplace add thedotmack/claude-mem
   /plugin install claude-mem@claude-mem
+
+## Claude Code Templates
+Browse/install pre-built agents, commands, and MCPs for this project: https://www.aitmpl.com/
+
+Suggested agent for this repo:
+```bash
+npx claude-code-templates@latest --agent devops-infrastructure/terraform-specialist --yes
+```
